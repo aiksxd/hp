@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@antv/x6-plugin-snapline": "^2.1.7",
+    "monaco-editor": "^0.55.1",
+    "monaco-languageclient": "^10.3.0",
+    "vscode-jsonrpc": "^8.2.1",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.106.1"
+  }
+}

@@ -1,0 +1,121 @@
+.rust-node {
+  background: linear-gradient(135deg, #3a5f8f 0%, #2c4768 100%);
+  border: 2px solid #8FBCBB;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #EBCB8B;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  min-width: 200px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.rust-node:hover {
+  border-color: #88C0D0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.node-header {
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #4C566A;
+  padding: 8px 12px;
+  font-weight: bold;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.node-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px;
+  min-height: 60px;
+}
+
+.ports-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  max-width: 45%;
+}
+
+.input-ports {
+  align-items: flex-start;
+}
+
+.output-ports {
+  align-items: flex-end;
+}
+
+.port {
+  display: flex;
+  align-items: center;
+  cursor: crosshair;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  position: relative;
+  background: rgba(136, 192, 208, 0.1);
+  border: 1px solid transparent;
+}
+
+.port-input {
+  flex-direction: row;
+}
+
+.port-output {
+  flex-direction: row-reverse;
+}
+
+.port:hover {
+  background: rgba(136, 192, 208, 0.2);
+  border-color: #88C0D0;
+}
+
+.port-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 6px;
+}
+
+.port-input .port-icon {
+  background: #BF616A;
+  box-shadow: 0 0 4px #BF616A;
+}
+
+.port-output .port-icon {
+  background: #A3BE8C;
+  box-shadow: 0 0 4px #A3BE8C;
+}
+
+.port-label {
+  font-size: 11px;
+  color: #D8DEE9;
+  white-space: nowrap;
+}
+
+.node-state {
+  align-self: center;
+  padding: 4px 8px;
+  background: rgba(235, 203, 139, 0.1);
+  border-radius: 3px;
+  font-size: 10px;
+  color: #EBCB8B;
+  margin: 0 8px;
+}
+
+/* 自定义边样式 */
+.rust-edge {
+  stroke: #8FBCBB;
+  stroke-width: 2;
+}
+
+.rust-edge:hover {
+  stroke: #88C0D0;
+  stroke-width: 3;
+}

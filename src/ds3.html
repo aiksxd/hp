@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust风格工作流节点 - 清晰显示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #cdd6f4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #ff7b00, #ffaa33);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a6adc8;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            max-width: 1200px;
+        }
+        
+        .canvas-container {
+            background-color: #181825;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #313244;
+            width: 800px;
+            height: 600px;
+        }
+        
+        #workflowCanvas {
+            background-color: #11111b;
+            border-radius: 8px;
+            display: block;
+            cursor: crosshair;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            background-color: #181825;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #313244;
+            min-width: 250px;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #f9e2af;
+        }
+        
+        h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            color: #cba6f7;
+        }
+        
+        .node-types {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .node-type {
+            background: #1e1e2e;
+            border: 1px solid #313244;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .node-type:hover {
+            background: #313244;
+            transform: translateY(-2px);
+        }
+        
+        .node-type.active {
+            background: #45475a;
+            border-color: #f38ba8;
+        }
+        
+        .instructions {
+            background: #1e1e2e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid #fab387;
+        }
+        
+        .instructions p {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        .feature-list {
+            list-style-type: none;
+            margin-top: 1rem;
+        }
+        
+        .feature-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: #a6e3a1;
+            position: absolute;
+            left: 0;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: #6c7086;
+            font-size: 0.9rem;
+        }
+        
+        .solution-explanation {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            max-width: 800px;
+            border: 1px solid #313244;
+        }
+        
+        .solution-explanation h2 {
+            color: #f9e2af;
+            margin-bottom: 1rem;
+        }
+        
+        .solution-explanation p {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .solution-explanation code {
+            background: #11111b;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Rust风格工作流节点 - 清晰显示</h1>
+        <p class="subtitle">解决Canvas节点模糊问题，提供清晰锐利的显示效果</p>
+    </div>
+    
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="workflowCanvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h2>节点类型</h2>
+                <div class="node-types">
+                    <div class="node-type active" data-type="data">数据处理</div>
+                    <div class="node-type" data-type="logic">逻辑控制</div>
+                    <div class="node-type" data-type="io">输入输出</div>
+                    <div class="node-type" data-type="custom">自定义节点</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>操作说明</h3>
+                <div class="instructions">
+                    <p>• 点击并拖动节点可移动位置</p>
+                    <p>• 点击输入/输出接口可查看连接点</p>
+                    <p>• 选择左侧节点类型可创建新节点</p>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>功能特性</h3>
+                <ul class="feature-list">
+                    <li>Rust风格视觉设计</li>
+                    <li>清晰的输入输出接口</li>
+                    <li>支持拖拽交互</li>
+                    <li>易于扩展连线功能</li>
+                    <li>高DPI屏幕优化</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="solution-explanation">
+        <h2>Canvas模糊问题解决方案</h2>
+        <p>Canvas模糊通常是由于Canvas的物理像素与CSS像素不匹配造成的。以下是关键解决方案：</p>
+        <p>1. 使用<code>window.devicePixelRatio</code>获取设备像素比</p>
+        <p>2. 将Canvas的宽高乘以设备像素比</p>
+        <p>3. 使用CSS设置Canvas的显示尺寸</p>
+        <p>4. 使用<code>ctx.scale()</code>调整绘制上下文</p>
+        <p>这些步骤确保Canvas在高DPI屏幕上也能清晰显示。</p>
+    </div>
+    
+    <div class="footer">
+        <p>设计用于连线式工作流代码编辑器 | Rust风格节点卡片 | 高DPI优化</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('workflowCanvas');
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            
+            // 解决Canvas模糊的关键代码
+            function setupCanvas() {
+                // 获取设备像素比
+                const dpr = window.devicePixelRatio || 1;
+                
+                // 获取容器的显示尺寸
+                const displayWidth = container.clientWidth;
+                const displayHeight = container.clientHeight;
+                
+                // 设置Canvas的CSS尺寸
+                canvas.style.width = displayWidth + 'px';
+                canvas.style.height = displayHeight + 'px';
+                
+                // 设置Canvas的实际像素尺寸（考虑设备像素比）
+                canvas.width = displayWidth * dpr;
+                canvas.height = displayHeight * dpr;
+                
+                // 缩放绘图上下文以匹配设备像素比
+                ctx.scale(dpr, dpr);
+            }
+            
+            // 初始设置Canvas
+            setupCanvas();
+            
+            // 窗口大小变化时重新设置Canvas
+            window.addEventListener('resize', setupCanvas);
+            
+            // 节点类型选择
+            const nodeTypes = document.querySelectorAll('.node-type');
+            let selectedNodeType = 'data';
+            
+            nodeTypes.forEach(type => {
+                type.addEventListener('click', function() {
+                    nodeTypes.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedNodeType = this.getAttribute('data-type');
+                });
+            });
+            
+            // 节点数据结构
+            const nodes = [
+                { 
+                    id: 1, 
+                    x: 100, 
+                    y: 100, 
+                    width: 180, 
+                    height: 140, 
+                    title: "数据加载", 
+                    type: "data",
+                    inputs: [{ id: "in1", x: 0, y: 0 }],
+                    outputs: [{ id: "out1", x: 0, y: 0 }]
+                },
+                { 
+                    id: 2, 
+                    x: 400, 
+                    y: 150, 
+                    width: 180, 
+                    height: 140, 
+                    title: "数据处理", 
+                    type: "logic",
+                    inputs: [{ id: "in1", x: 0, y: 0 }],
+                    outputs: [{ id: "out1", x: 0, y: 0 }]
+                },
+                { 
+                    id: 3, 
+                    x: 250, 
+                    y: 350, 
+                    width: 180, 
+                    height: 140, 
+                    title: "结果输出", 
+                    type: "io",
+                    inputs: [{ id: "in1", x: 0, y: 0 }],
+                    outputs: [{ id: "out1", x: 0, y: 0 }]
+                }
+            ];
+            
+            // 颜色配置
+            const colors = {
+                background: "#11111b",
+                nodeBg: "#1e1e2e",
+                nodeBorder: "#313244",
+                titleBg: "#181825",
+                titleText: "#cdd6f4",
+                text: "#a6adc8",
+                data: "#f38ba8",
+                logic: "#94e2d5",
+                io: "#fab387",
+                custom: "#cba6f7",
+                input: "#a6e3a1",
+                output: "#f9e2af"
+            };
+            
+            // 绘制节点
+            function drawNode(node) {
+                // 绘制节点主体
+                ctx.fillStyle = colors.nodeBg;
+                ctx.strokeStyle = colors.nodeBorder;
+                ctx.lineWidth = 2;
+                
+                // 圆角矩形
+                roundRect(ctx, node.x, node.y, node.width, node.height, 8);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 绘制标题栏
+                const titleHeight = 30;
+                ctx.fillStyle = getNodeColor(node.type);
+                roundRect(ctx, node.x, node.y, node.width, titleHeight, 8, true, false);
+                ctx.fill();
+                
+                // 绘制标题文字
+                ctx.fillStyle = colors.titleText;
+                ctx.font = "bold 14px 'Segoe UI', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(node.title, node.x + node.width/2, node.y + titleHeight/2);
+                
+                // 绘制输入接口
+                const inputCount = node.inputs.length;
+                node.inputs.forEach((input, index) => {
+                    const inputY = node.y + titleHeight + 20 + (index * 30);
+                    input.x = node.x;
+                    input.y = inputY;
+                    
+                    // 绘制接口点
+                    ctx.fillStyle = colors.input;
+                    ctx.beginPath();
+                    ctx.arc(node.x, inputY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制接口标签
+                    ctx.fillStyle = colors.text;
+                    ctx.font = "12px 'Segoe UI', sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("输入", node.x + 12, inputY);
+                });
+                
+                // 绘制输出接口
+                const outputCount = node.outputs.length;
+                node.outputs.forEach((output, index) => {
+                    const outputY = node.y + titleHeight + 20 + (index * 30);
+                    output.x = node.x + node.width;
+                    output.y = outputY;
+                    
+                    // 绘制接口点
+                    ctx.fillStyle = colors.output;
+                    ctx.beginPath();
+                    ctx.arc(node.x + node.width, outputY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制接口标签
+                    ctx.fillStyle = colors.text;
+                    ctx.font = "12px 'Segoe UI', sans-serif";
+                    ctx.textAlign = "right";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("输出", node.x + node.width - 12, outputY);
+                });
+            }
+            
+            // 获取节点颜色
+            function getNodeColor(type) {
+                switch(type) {
+                    case 'data': return colors.data;
+                    case 'logic': return colors.logic;
+                    case 'io': return colors.io;
+                    case 'custom': return colors.custom;
+                    default: return colors.data;
+                }
+            }
+            
+            // 绘制圆角矩形
+            function roundRect(ctx, x, y, width, height, radius, topOnly = false, bottomOnly = false) {
+                if (topOnly) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height);
+                    ctx.lineTo(x, y + height);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                } else if (bottomOnly) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + width, y);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.closePath();
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                }
+            }
+            
+            // 绘制所有节点
+            function drawAllNodes() {
+                // 清除画布
+                ctx.fillStyle = colors.background;
+                ctx.fillRect(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+                
+                // 绘制所有节点
+                nodes.forEach(node => {
+                    drawNode(node);
+                });
+            }
+            
+            // 初始绘制
+            drawAllNodes();
+            
+            // 节点拖拽功能
+            let selectedNode = null;
+            let offsetX, offsetY;
+            
+            canvas.addEventListener('mousedown', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / (window.devicePixelRatio || 1) / rect.width;
+                const scaleY = canvas.height / (window.devicePixelRatio || 1) / rect.height;
+                
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                
+                // 检查是否点击了节点
+                for (let i = nodes.length - 1; i >= 0; i--) {
+                    const node = nodes[i];
+                    if (mouseX >= node.x && mouseX <= node.x + node.width &&
+                        mouseY >= node.y && mouseY <= node.y + node.height) {
+                        
+                        selectedNode = node;
+                        offsetX = mouseX - node.x;
+                        offsetY = mouseY - node.y;
+                        break;
+                    }
+                }
+            });
+            
+            canvas.addEventListener('mousemove', function(e) {
+                if (selectedNode) {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / (window.devicePixelRatio || 1) / rect.width;
+                    const scaleY = canvas.height / (window.devicePixelRatio || 1) / rect.height;
+                    
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    
+                    selectedNode.x = mouseX - offsetX;
+                    selectedNode.y = mouseY - offsetY;
+                    
+                    drawAllNodes();
+                }
+            });
+            
+            canvas.addEventListener('mouseup', function() {
+                selectedNode = null;
+            });
+            
+            canvas.addEventListener('mouseleave', function() {
+                selectedNode = null;
+            });
+        });
+    </script>
+</body>
+</html>
