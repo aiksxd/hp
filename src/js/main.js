@@ -4,19 +4,20 @@ const appWindow = getCurrentWindow();
 // global variable
 let activeEditor = 0
 let editorArray = [];
-let nodeArray = [];
+
 class NodeDataManager {
     constructor() {
+        this.nodes = new Map();
+        this.nodeCodeStorage = new Map();
         this.selectedNode = null;
         this.nodeCounter = 0;
     }
     
     // 添加新节点到nodeArray
     addNode(node, nodeType) {
-        const nodeIndex = this.nodeCounter++;
+        const nodeId = `node_${this.nodeCounter++}`;
         const nodeData = {
-            id: `node_${nodeIndex}`,
-            index: nodeIndex, // 存储索引
+            id: nodeId,
             type: nodeType,
             properties: {},
             inputs: {},
@@ -25,31 +26,29 @@ class NodeDataManager {
             dynamicInputs: []
         };
         
-        // 添加到全局nodeArray
-        nodeArray[nodeIndex] = nodeData;
+        this.nodes.set(nodeId, nodeData);
         node.customData = { 
-            id: nodeData.id,
-            index: nodeIndex // 在节点中也存储索引
+            id: nodeId
         };
         
-        console.log(`节点 ${nodeData.id} 已添加到索引 ${nodeIndex}`);
+        console.log(`节点 ${nodeId} 已添加`);
         return nodeData;
     }
     
-    // 通过索引获取节点数据
     getNodeData(node) {
         if (!node.customData) return null;
-        return nodeArray[node.customData.index];
+        return this.nodes.get(node.customData.id);
     }
     
     // 通过索引更新节点属性
-    updateNodeProperties(nodeIndex, newProperties) {
-        if (nodeArray[nodeIndex]) {
-            nodeArray[nodeIndex].properties = { 
-                ...nodeArray[nodeIndex].properties, 
+    updateNodeProperties(nodeId, newProperties) {
+        const nodeData = this.nodes.get(nodeId);
+        if (nodeData) {
+            nodeData.properties = { 
+                ...nodeData.properties, 
                 ...newProperties 
             };
-            console.log(`节点索引 ${nodeIndex} 属性已更新:`, newProperties);
+            console.log(`节点 ${nodeId} 属性已更新:`, newProperties);
             return true;
         }
         return false;
@@ -70,7 +69,7 @@ class NodeDataManager {
         nodeData.dynamicInputs.push(newInput);
         node.addInput(inputName, inputType);
         
-        console.log(`动态输入 ${inputName} 已添加到节点索引 ${nodeData.index}`);
+        console.log(`动态输入 ${inputName} 已添加到节点 ${nodeData.id}`);
         return true;
     }
     
@@ -84,7 +83,7 @@ class NodeDataManager {
         );
         node.removeInput(inputName);
         
-        console.log(`动态输入 ${inputName} 已从节点索引 ${nodeData.index} 移除`);
+        console.log(`动态输入 ${inputName} 已从节点 ${nodeData.id} 移除`);
         return true;
     }
     
@@ -114,7 +113,7 @@ class NodeDataManager {
         });
         
         nodeData.dynamicInputs = [...newInputs];
-        console.log(`节点索引 ${nodeData.index} 的动态输入已更新`);
+        console.log(`节点 ${nodeData.id} 的动态输入已更新`);
         return true;
     }
     
@@ -130,7 +129,6 @@ class NodeDataManager {
     notifyEditorUpdate(nodeData) {
         const editorData = {
             id: nodeData.id,
-            index: nodeData.index, // 包含索引
             type: nodeData.type,
             properties: nodeData.properties,
             inputs: nodeData.inputs,
@@ -146,48 +144,32 @@ class NodeDataManager {
         });
         document.dispatchEvent(event);
         
-        console.log('编辑器数据已更新，节点索引:', nodeData.index);
+        console.log('编辑器数据已更新:', editorData);
     }
     
-    // 根据编辑器数据更新节点（通过索引直接访问）
+    // 根据编辑器数据更新节点
     updateNodeFromEditorData(editorData) {
-        const nodeIndex = editorData.index;
+        let node = this.nodes.get(editorData.nodeId);
         
-        console.log(editorData)
-        console.log("editorData; index:")
-        console.log(nodeIndex)
-        console.log("index; Array:")
-        console.log(nodeArray)
-        if (!nodeArray[nodeIndex]) {
-            console.warn('未找到对应的节点索引:', nodeIndex);
-            return false;
-        }
-        
-        const nodeData = nodeArray[nodeIndex];
-        const graph = window.graph;
-        if (!graph) {
-            console.warn('未找到图形实例');
-            return false;
-        }
-        
-        // 通过索引查找节点
-        const node = graph._nodes.find(n => 
-            n.customData && n.customData.index === nodeIndex
-        );
-        
+        // console.log("editorData:")
+        // console.log(editorData)
         if (!node) {
-            console.warn('未找到对应的节点实例，索引:', nodeIndex);
+            console.warn('未找到对应的节点id', editorData.nodeId);
+            return false;
+        }
+        
+        if (!window.graph) {
+            console.warn('未找到图形实例');
             return false;
         }
         
         let updated = false;
         
         // 更新属性
-        if (editorData.properties) {
-            node.properties = { ...node.properties, ...editorData.properties };
-            nodeData.properties = { ...nodeData.properties, ...editorData.properties };
+        if (editorData) {
+            Object.assign(node, editorData);
+            console.log('节点属性已更新:', node);
             updated = true;
-            console.log('节点属性已更新，索引:', nodeIndex);
         }
         
         // 更新动态输入
@@ -196,26 +178,66 @@ class NodeDataManager {
             updated = true;
         }
         
-        if (updated) {
-            node.setDirtyCanvas(true);
-            if (window.canvas) {
-                window.canvas.dirty = true;
-            }
-        }
+        // if (updated) {
+        //     // 强制重绘
+        //     if (window.canvas) {
+        //         window.canvas.dirty = true;
+        //         // 使用 setTimeout 确保重绘在浏览器下一帧执行，避免潜在的性能问题
+        //         setTimeout(() => {
+        //             window.canvas.draw(true, true);
+        //         }, 0);
+        //     }
+            
+        //     // 触发属性变化事件
+        //     if (node.onPropertyChanged) {
+        //         Object.keys(editorData.properties || {}).forEach(key => {
+        //             node.onPropertyChanged(key, editorData.properties[key]);
+        //         });
+        //     }
+        // }
         
         return updated;
     }
+    // 保存节点代码
+    saveNodeCode(nodeId, code, language) {
+        this.nodeCodeStorage.set(`${nodeId}_code`, {
+            code,
+            language,
+            lastModified: new Date().toISOString()
+        });
+        console.log(`节点 ${nodeId} 的代码已保存`);
+    }
     
-    // 获取所有节点数据（调试用）
+    // 获取节点代码
+    getNodeCode(nodeId) {
+        return this.nodeCodeStorage.get(`${nodeId}_code`);
+    }
+    
+    // 获取所有节点数据
     getAllNodes() {
-        return nodeArray.filter(Boolean); // 过滤掉空值
+        return nodeArray.filter(Boolean);
+    }
+
+    // 切换编辑器模式
+    switchToCodeMode(node) {
+        const nodeData = this.getNodeData(node);
+        if (!nodeData) return;
+        
+        const savedCode = this.getNodeCode(nodeData.id);
+        const codeContent = savedCode ? savedCode.code : this.generateDefaultCode(nodeData);
+        
+        editorCommManager.updateMonacoEditor(codeContent, 'code');
     }
     
-    // 清理已删除的节点
-    cleanupDeletedNodes() {
-        // 这里可以添加逻辑来清理标记为删除的节点
-        console.log('当前节点数量:', this.getAllNodes().length);
+    // 序列化所有节点数据（用于导出）
+    serializeAllNodes() {
+        return this.getAllNodes().map(nodeData => ({
+            ...nodeData,
+            // 确保属性是可序列化的
+            properties: JSON.parse(JSON.stringify(nodeData.properties))
+        }));
     }
+
 }
 
 // 全局节点管理器
@@ -235,39 +257,3 @@ document.getElementById('titlebar-maximize').addEventListener('click', () => {
 document.getElementById('titlebar-close').addEventListener('click', () => {
     appWindow.close();
 });
-// 调试工具函数
-window.debugNodes = {
-    // 显示所有节点信息
-    showAllNodes: function() {
-        console.log('=== 所有节点信息 ===');
-        nodeArray.forEach((node, index) => {
-            if (node) {
-                console.log(`[${index}] ${node.id}:`, {
-                    type: node.type,
-                    properties: node.properties,
-                    dynamicInputs: node.dynamicInputs
-                });
-            }
-        });
-        console.log('=== 结束 ===');
-    },
-    
-    // 获取节点数量
-    getNodeCount: function() {
-        return nodeArray.filter(Boolean).length;
-    },
-    
-    // 通过索引获取节点
-    getNodeByIndex: function(index) {
-        return nodeArray[index];
-    },
-    
-    // 查找节点
-    findNode: function(predicate) {
-        return nodeArray.find(predicate);
-    }
-};
-
-// 在控制台中可以调用：
-// debugNodes.showAllNodes()
-// debugNodes.getNodeCount()

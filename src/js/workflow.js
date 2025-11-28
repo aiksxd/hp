@@ -64,7 +64,7 @@ function initializeLiteGraph() {
     }
     
     MyAddNode.prototype.onSelected = function() {
-        console.log("节点被选中，索引:", this.customData.index);
+        console.log("节点被选中:", this.customData.id);
         nodeManager.setSelectedNode(this);
     }
 
@@ -73,16 +73,10 @@ function initializeLiteGraph() {
         
         const nodeData = nodeManager.getNodeData(this);
         if (nodeData) {
-            nodeManager.updateNodeProperties(nodeData.index, { [name]: value });
+            nodeManager.updateNodeProperties(nodeData.id, { [name]: value });
         }
         
         return true;
-    }
-
-    MyAddNode.prototype.onRemoved = function() {
-        console.log(`节点被移除，索引: ${this.customData.index}`);
-        // 可以在这里标记节点为已删除，而不是立即从数组中移除
-        // nodeArray[this.customData.index].deleted = true;
     }
 
     // 注册其他节点类型

@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 创建LiteGraph实例
     setTimeout(() => {
         window.graph = new LGraph();
-        const canvas = new LGraphCanvas("#workflowCanvas", window.graph);
+        window.canvas = new LGraphCanvas("#workflowCanvas", window.graph);
         // 启动图形
     }, 10);
     canvasManager.updateStatus('LiteGraph Launched');

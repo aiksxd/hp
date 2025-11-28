@@ -77,10 +77,8 @@ require(['vs/editor/editor.main'], function () {
 class EditorCommunicationManager {
     constructor() {
         this.isUpdating = false;
-        this.nodes = new Map();
         this.currentNodeId = null;
         this.setupEventListeners();
-        this.setupModeIndicator();
     }
     
     setupEventListeners() {
@@ -97,26 +95,21 @@ class EditorCommunicationManager {
         this.currentNodeId = nodeData.id;
         
         // 格式化显示数据
-        const displayData = {
+        const data = {
             nodeId: nodeData.id,
-            index: nodeData.index,
-            nodeType: nodeData.type,
-            properties: nodeData.properties,
             inputs: nodeData.inputs,
             outputs: nodeData.outputs,
             customInputs: nodeData.customInputs,
-            dynamicInputs: nodeData.dynamicInputs,
-            _nodeConfig: true,
-            _timestamp: new Date().toISOString()
+            dynamicInputs: nodeData.dynamicInputs
         };
         
         this.updateMonacoEditor(
-            JSON.stringify(displayData, null, 2),
+            data,
             'node-config'
         );
     }
     
-    updateMonacoEditor(content, contentType) {
+    updateMonacoEditor(data, contentType) {
         this.isUpdating = true;
         let editor;
 
@@ -125,8 +118,8 @@ class EditorCommunicationManager {
         } else {
             return;
         }
-        
-        editor.setValue(content);
+
+        editor.setValue(JSON.stringify(data, null, 4));
         
         // 根据内容类型设置语言模式
         this.setEditorLanguage(editor, contentType);
@@ -189,7 +182,7 @@ class EditorCommunicationManager {
         const nodeData = JSON.parse(content);
         
         // 验证是否是节点配置
-        if (!nodeData._nodeConfig || !nodeData.nodeId) {
+        if (!nodeData.nodeId) {
             console.log('不是节点配置JSON，忽略更新');
             return;
         }
@@ -201,16 +194,16 @@ class EditorCommunicationManager {
         }
         // 更新节点数据
         const success = nodeManager.updateNodeFromEditorData(nodeData);
-        if (success) {
-            console.log('节点更新成功');
-        } else {
-            console.log('节点更新失败');
-        }
+        // if (success) {
+        //     console.log('节点更新成功');
+        // } else {
+        //     console.log('节点更新失败');
+        // }
         
     }
 
     handleCodeContent(content, language) {
-        console.log(`处理 ${language} 代码:`, content.substring(0, 100) + '...');
+        console.log(`处理 ${language} 代码:`, content.substring(0, 20) + '...');
         // 这里可以添加代码执行、保存等功能
         
         // 保存代码到节点
@@ -224,9 +217,11 @@ class EditorCommunicationManager {
         const indicator = document.createElement('div');
         indicator.id = 'editor-mode-indicator';
         indicator.style.cssText = `
+            width: 100px;
+            height: 100px;
             position: fixed;
-            top: 10px;
-            right: 10px;
+            top: 100px;
+            right: 100px;
             background: rgba(0,0,0,0.8);
             color: white;
             padding: 5px 10px;
