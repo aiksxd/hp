@@ -1,6 +1,10 @@
 const { getCurrentWindow } = window.__TAURI__.window;
 
 const appWindow = getCurrentWindow();
+// global variable
+let activeEditor = 0
+let editorArray = [];
+let nodeArray = [];
 
 // 为最小化按钮绑定事件
 document.getElementById('titlebar-minimize').addEventListener('click', () => {
