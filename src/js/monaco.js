@@ -35,7 +35,7 @@ require(['vs/editor/editor.main'], function () {
             fontSize: 20,
             automaticLayout: true,
         });
-        console.log("start listen editor")
+        // console.log("start listen editor")
         let changeTimeout;
         
         const handleChange = () => {
@@ -91,7 +91,7 @@ class EditorCommunicationManager {
     handleNodeSelected(nodeData) {
         if (this.isUpdating) return;
         
-        console.log('处理节点选中:', nodeData);
+        // console.log('处理节点选中:', nodeData);
         this.currentNodeId = nodeData.id;
         
         // 格式化显示数据
@@ -99,8 +99,6 @@ class EditorCommunicationManager {
             nodeId: nodeData.id,
             inputs: nodeData.inputs,
             outputs: nodeData.outputs,
-            customInputs: nodeData.customInputs,
-            dynamicInputs: nodeData.dynamicInputs
         };
         
         this.updateMonacoEditor(
@@ -123,9 +121,6 @@ class EditorCommunicationManager {
         
         // 根据内容类型设置语言模式
         this.setEditorLanguage(editor, contentType);
-        
-        // 更新模式指示器
-        this.updateModeIndicator(contentType);
         
         setTimeout(() => {
             this.isUpdating = false;
@@ -193,13 +188,7 @@ class EditorCommunicationManager {
             return;
         }
         // 更新节点数据
-        const success = nodeManager.updateNodeFromEditorData(nodeData);
-        // if (success) {
-        //     console.log('节点更新成功');
-        // } else {
-        //     console.log('节点更新失败');
-        // }
-        
+        nodeManager.updateNodeFromEditorData(nodeData);
     }
 
     handleCodeContent(content, language) {
@@ -211,79 +200,7 @@ class EditorCommunicationManager {
             nodeManager.saveNodeCode(this.currentNodeId, content, language);
         }
     }
-
-    setupModeIndicator() {
-        // 创建模式指示器UI
-        const indicator = document.createElement('div');
-        indicator.id = 'editor-mode-indicator';
-        indicator.style.cssText = `
-            width: 100px;
-            height: 100px;
-            position: fixed;
-            top: 100px;
-            right: 100px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 12px;
-            z-index: 1000;
-            pointer-events: none;
-        `;
-        document.body.appendChild(indicator);
-        
-        this.modeIndicator = indicator;
-    }
-
-    updateModeIndicator(contentType) {
-        if (!this.modeIndicator) return;
-        
-        const modeTexts = {
-            'node-config': '🔧 节点配置模式',
-            'code': '💻 代码编辑模式', 
-            'text': '📝 文本编辑模式',
-            'empty': '⚪ 空编辑器'
-        };
-        
-        this.modeIndicator.textContent = modeTexts[contentType] || '❓ 未知模式';
-        
-        const colors = {
-            'node-config': '#4CAF50',
-            'code': '#2196F3',
-            'text': '#FF9800'
-        };
-        
-        this.modeIndicator.style.background = colors[contentType] || '#666';
-    }
     
-    updateNodeFromEditor(nodeData, newData) {
-        // 更新属性
-        if (newData.properties) {
-            nodeData.properties = { ...nodeData.properties, ...newData.properties };
-            
-            // 找到实际的节点对象并更新
-            const graph = window.graph; // 假设graph是全局的
-            if (graph) {
-                const node = graph._nodes.find(n => 
-                    n.customData && n.customData.id === nodeData.id
-                );
-                if (node) {
-                    node.properties = { ...node.properties, ...newData.properties };
-                    console.log('节点属性已同步:', node.properties);
-                }
-            }
-        }
-        
-        // 处理动态输入（下一步实现）
-        if (newData.customInputs) {
-            this.handleCustomInputs(nodeData, newData.customInputs);
-        }
-    }
-    
-    handleCustomInputs(nodeData, customInputs) {
-        // 这里将在下一步实现动态输入功能
-        console.log('处理动态输入:', customInputs);
-    }
 }
 
 // 初始化编辑器通信
@@ -291,19 +208,28 @@ const editorCommManager = new EditorCommunicationManager();
 const editor_container = document.getElementById('editor-container')
 
 // 点击编辑器时展开
-editor_container.addEventListener('click', function(e) {
+editor_container.addEventListener('mousedown', function(e) {
     e.stopPropagation();
     this.classList.add('active');
 });
 
-// 点击页面其他区域时收起
-document.addEventListener('click', function(e) {
-    if (!editor_container.contains(e.target)) {
-        editor_container.classList.remove('active');
-    }
+document.addEventListener('mouseup', function(e) {
+    editor_container.classList.remove('active');
 });
 
-// 可选：防止编辑器内容内的点击事件误触发收起
-editor_container.addEventListener('click', function(e) {
-    e.stopPropagation();
-});
+function registerFunctionFromString(functionName, functionString) {
+    try {
+        const dynamicFunction = new Function('return ' + functionString)();
+        window[functionName] = dynamicFunction;
+        
+        const functionRegistry = window.functionRegistry || {};
+        functionRegistry[functionName] = dynamicFunction;
+        window.functionRegistry = functionRegistry;
+        
+        console.log(`函数 ${functionName} 注册成功`);
+        return dynamicFunction;
+    } catch (error) {
+        console.error('函数注册失败:', error);
+        return null;
+    }
+}

@@ -211,7 +211,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 启动图形
     }, 10);
     canvasManager.updateStatus('LiteGraph Launched');
-
 });
 
 // 导出供其他模块使用
