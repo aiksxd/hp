@@ -1,52 +1,34 @@
-// workflow.js - 简化的版本
-// LiteGraph 集成
+// workflow.js
 function initializeLiteGraph() {
 
     // 自定义节点类型
-    function MyAddNode() {
+    function jsNode() {
         this.addInput("input", "number");
         this.addOutput("output", "number");
         this.properties = {
-            description: "sample node"
-        };
-
-        // 注册到节点管理器
-        const nodeData = nodeManager.addNode(this, "basic/sample");
-
-        // 初始化节点数据
-        nodeData.inputs = {
-            "input": "number"
-        };
-        nodeData.outputs = {
-            "output": "number"
+            description: "javascript node",
+            fn: "",
+            codeType: 'javascript'
         };
     }
 
-    MyAddNode.title = "sample";
+    jsNode.title = "JavaScript";
     
-    MyAddNode.prototype.onExecute = function() {
-        let fn = Array.from(nodes.get(this.id))[2](...args)
-        // 使用精度设置
-        const precision = this.properties.precision || 1;
-        
-        this.setOutputData(0, fn());
+    jsNode.prototype.onExecute = function() {
+        const f = new Function(this.properties.fn);
+        f();
     }
     
-    MyAddNode.prototype.onSelected = function() {
-        console.log("节点被选中:", this.customData.id);
-        nodeManager.setSelectedNode(this);
+    jsNode.prototype.onSelected = function() {
+        console.log("节点被选中:", this.id);
+        
+        const event = new CustomEvent('nodeSelected', { 
+            detail: this
+        });
+        document.dispatchEvent(event);
     }
 
-    MyAddNode.prototype.onPropertyChanged = function(name, value) {
-        
-        const nodeData = nodeManager.getNodeData(this);
-        if (nodeData) {
-            nodeManager.updateNodeProperties(nodeData.id, { [name]: value });
-        }
-        
-        return true;
-    }
-    LiteGraph.registerNodeType("basic/sum", MyAddNode);
+    LiteGraph.registerNodeType("javascript", jsNode);
 
     // 注册其他节点类型
     function sum(a,b) {

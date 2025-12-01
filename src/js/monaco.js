@@ -5,9 +5,10 @@ require(['vs/editor/editor.main'], function () {
     // 初始化变量
     let fileCounter = 0;
     let defaultCode = [
-        'fn main() {',
-        '    print!("Hello Mr. Gao").unwrap();',
-        '}',
+        '## welcome',
+        '1. double click to create a node',
+        '2. click a node to start edit',
+        `-  Alt + N : next tool`
     ].join('\n');
 
     monaco.editor.defineTheme("myTheme", {
@@ -35,22 +36,35 @@ require(['vs/editor/editor.main'], function () {
             fontSize: 20,
             automaticLayout: true,
         });
-        // console.log("start listen editor")
-        let changeTimeout;
         
         const handleChange = () => {
-            clearTimeout(changeTimeout);
-            changeTimeout = setTimeout(() => {
-                editorCommManager.checkEditorContent();
+            clearTimeout(window.editorContentSaveTimeout);
+            window.editorContentSaveTimeout = undefined;
+            window.editorContentSaveTimeout = setTimeout(() => {
+                editorCommManager.saveEditorContent();
             }, 1000); // 1秒防抖
         };
         editor.onDidChangeModelContent(function(e){
-            handleChange();
+            console.log(e)
+            if (editorCommManager.currentNodeId === null) {
+                return;
+            }
+            // prevent changing page(with content) leading to call handle()
+            if (editorCommManager.lastEditContent !== window.editContentType) {
+                editorCommManager.lastEditContent = window.editContentType;
+                return
+            }
+            // prevent changing node(too...) leading to call handle()
+            if (editorCommManager.lastNodeId === editorCommManager.currentNodeId) {
+                editorCommManager.nodeModified = true;
+                handleChange();
+            }
         });
         editorArray.push(editor);
         return editor;
     }
 
+    // todo later
     function addNewEditor(code, language) {
         let new_container = document.createElement("div");
         new_container.id = "editor-" + fileCounter.toString(10);
@@ -61,7 +75,7 @@ require(['vs/editor/editor.main'], function () {
     }
     // addNewEditor(defaultCode, 'rust');
 
-    newEditor("main-editor", defaultCode, "rust");
+    window.editor = newEditor("main-editor", defaultCode, "markdown");
 
     
     // 全局函数，用于调整nav布局
@@ -78,81 +92,95 @@ class EditorCommunicationManager {
     constructor() {
         this.isUpdating = false;
         this.currentNodeId = null;
+        this.lastNodeId = null;
+        this.lastEditContent = null;
+        this.nodeModified = false;
         this.setupEventListeners();
     }
-    
+    // ----------------------- Editor Recive -----------------
     setupEventListeners() {
         // 监听节点选中事件
         document.addEventListener('nodeSelected', (event) => {
-            this.handleNodeSelected(event.detail);
+            this.currentNodeId = event.detail.id;
+            // prevent click same node leading to handle
+            if (this.lastNodeId !== this.currentNodeId) {
+                this.lastNodeId = this.currentNodeId;
+                this.handleNewDataComing(event.detail);
+            }
         });
     }
     
-    handleNodeSelected(nodeData) {
+    // call when node selected or change edit content(node-config or node's function)
+    handleNewDataComing(nodeData) {
         if (this.isUpdating) return;
-        
-        // console.log('处理节点选中:', nodeData);
-        this.currentNodeId = nodeData.id;
-        
+        let data;
+        let contentType = 'node-config';
+        // provide new data and mark it false for preventing saving data 
+        // when change editor content without modification
+        this.nodeModified = false;
         // 格式化显示数据
-        const data = {
-            nodeId: nodeData.id,
-            inputs: nodeData.inputs,
-            outputs: nodeData.outputs,
-        };
+        switch (window.editContentType) {
+            case 'node':
+                data = {
+                    title: nodeData.title,
+                    inputs: nodeData.inputs,
+                    outputs: nodeData.outputs,
+                };
+            break;
+            case 'code':
+                if (nodeData.properties.fn) {
+                    data = nodeData.properties.fn;
+                } else {
+                    data = [
+                        `${nodeData.inputs.map((input, i) => `let ${input.name} = this.getInputData(${i});`).join('\n')}`,
+                        `${nodeData.outputs.map(output => `let ${output.name} = undefined;`).join('\n')}`,
+                        `// write your code here`,
+                        `${nodeData.outputs.map((output, i) => `this.setOutputData(${i}) = ${output.name};`).join('\n')}`
+                    ].join('\n');
+                }
+                contentType = nodeData.properties.codeType;
+            break;
+        
+            default:
+                data = nodeData.properties.description;
+            break;
+        }
         
         this.updateMonacoEditor(
             data,
-            'node-config'
+            contentType
         );
     }
     
     updateMonacoEditor(data, contentType) {
         this.isUpdating = true;
-        let editor;
+        const model = window.editor.getModel();
 
-        if (editorArray && editorArray[activeEditor]) {
-            editor = editorArray[activeEditor];
-        } else {
-            return;
+        switch (window.editContentType) {
+            case 'node':
+                window.editor.setValue(jsonToSimple(data));
+                monaco.editor.setModelLanguage(model, 'yaml');
+            break;
+            case 'code':
+                window.editor.setValue(data);
+                monaco.editor.setModelLanguage(model, contentType);
+            break;
+            default:
+                window.editor.setValue(data);
+                monaco.editor.setModelLanguage(model, 'plaintext');
+            break;
         }
-
-        editor.setValue(JSON.stringify(data, null, 4));
-        
-        // 根据内容类型设置语言模式
-        this.setEditorLanguage(editor, contentType);
         
         setTimeout(() => {
             this.isUpdating = false;
         }, 100);
     }
 
-    setEditorLanguage(editor, contentType) {
-        const model = editorArray[activeEditor].getModel();
-        
-        switch (contentType) {
-            case 'node-config':
-                monaco.editor.setModelLanguage(model, 'json');
-                break;
-            case 'code':
-                const currentLanguage = model.getLanguageId();
-                monaco.editor.setModelLanguage(model, currentLanguage);
-                break;
-            default:
-                monaco.editor.setModelLanguage(model, 'plaintext');
-        }
-    }
-    
-    checkEditorContent() {
+    // ----------------------- Editor Write -----------------
+    saveEditorContent() {
         if (this.isUpdating) return;
         
-        let content = "";
-        let editor;
-        
-        if (editorArray && editorArray[activeEditor]) {
-            editor = editorArray[activeEditor];
-            content = editor.getValue();
-        }
+        let content = window.editor.getValue();
         
         if (content && content.trim()) {
             this.handleEditorContentChange(content, editor);
@@ -160,44 +188,91 @@ class EditorCommunicationManager {
     }
     
     handleEditorContentChange(content) {
-        const model = editorArray[activeEditor].getModel();
-        const currentLanguage = model.getLanguageId();
-        switch (currentLanguage) {
-            case "json":
-                this.handleJsonInputs(content)
+        switch (window.editContentType) {
+            case 'node':
+                this.handleNodeUpdate(content)
             break;
-        
+            case 'code':
+                this.handleCodeContent(content);
+            break;
+
             default:
-                this.handleCodeContent(content, currentLanguage);
             break;
         }
     }
 
-    handleJsonInputs(content) {
-        const nodeData = JSON.parse(content);
+    handleNodeUpdate(content) {
+        let newData = simpleToJson(content)
+        // let newData = JSON.parse(content)
+        let node = findById(window.graph._nodes, this.currentNodeId);
         
-        // 验证是否是节点配置
-        if (!nodeData.nodeId) {
-            console.log('不是节点配置JSON，忽略更新');
-            return;
+        while(node.inputs && node.inputs.length) {
+            node.removeInput(0);
+        }
+        while(node.outputs && node.outputs.length) {
+            node.removeOutput(0);
         }
         
-        // 检查是否与当前选中节点匹配
-        if (nodeData.nodeId !== this.currentNodeId) {
-            console.log('节点ID不匹配，忽略更新');
-            return;
+        // 添加新输入
+        node.addInputs(newData.inputs.map(input => [
+            input.name, 
+            input.type, 
+            Object.fromEntries(
+                Object.entries(input).filter(([key]) => 
+                    !['name', 'type'].includes(key)
+                )
+            )
+        ]));
+
+        node.addOutputs(newData.outputs.map(output => [
+            output.name, 
+            output.type, 
+            Object.fromEntries(
+                Object.entries(output).filter(([key]) => 
+                    !['name', 'type'].includes(key)
+                )
+            )
+        ]));
+    
+        let i = 0
+        while (i < Array.from(node.outputs).length) {
+            Array.from(node.outputs)[i].links = [];
+            // Array.from(node.outputs)[i].links = Array.from(newData.outputs)[i].links;
+            i++;
         }
-        // 更新节点数据
-        nodeManager.updateNodeFromEditorData(nodeData);
+            // node.addInputs([
+            //     // 基础输入端口
+            //     ["input1", "number"],
+                
+            //     // 带配置的输入端口
+            //     ["input2", "string", {
+            //         label: "文本输入",
+            //         required: true,
+            //         widget: "text"
+            //     }],
+                
+            //     // 另一个带配置的端口
+            //     ["input3", "boolean", {
+            //         default: false,
+            //         color: "#FF0000"
+            //     }],
+                
+            //     // 数组类型输入
+            //     ["data", "array", {
+            //         accept: ["number", "string"],
+            //         max_connections: 3
+            //     }]
+            // ])
+        // }
     }
 
-    handleCodeContent(content, language) {
-        console.log(`处理 ${language} 代码:`, content.substring(0, 20) + '...');
-        // 这里可以添加代码执行、保存等功能
+    handleCodeContent(content) {
+        let node = findById(window.graph._nodes, this.currentNodeId);
         
         // 保存代码到节点
         if (this.currentNodeId) {
-            nodeManager.saveNodeCode(this.currentNodeId, content, language);
+            console.log(`处理 ${node.properties.codeType} 代码:`, content.substring(0, 20) + '...');
+            node.properties.fn = content;
         }
     }
     
@@ -232,4 +307,53 @@ function registerFunctionFromString(functionName, functionString) {
         console.error('函数注册失败:', error);
         return null;
     }
+}
+
+// const compressJSON = obj => `{
+// "title":${JSON.stringify(obj.title)},
+// "inputs": [
+// ${obj.inputs.map(i => `    ${JSON.stringify({name:i.name,type:i.type})}`).join(',\n')}
+// ],"outputs": [
+// ${obj.outputs.map(o => `    ${JSON.stringify({name:o.name,type:o.type})}`).join(',\n')}
+// ]}`;
+
+function jsonToSimple(obj) {
+    const {title, inputs, outputs} = obj;
+    
+    return `title: ${title}
+inputs:
+${inputs.map(i => `  - ${i.name} (${i.type})`).join('\n')}
+outputs:
+${outputs.map(o => `  - ${o.name} (${o.type})`).join('\n')}`;
+}
+
+function simpleToJson(simpleText) {
+    const lines = simpleText.split('\n').filter(line => line.trim());
+    const result = {
+        title: '',
+        inputs: [],
+        outputs: []
+    };
+    
+    let currentSection = '';
+    
+    lines.forEach(line => {
+        if (line.startsWith('title:')) {
+            result.title = line.replace('title:', '').trim();
+        } else if (line === 'inputs:') {
+            currentSection = 'inputs';
+        } else if (line === 'outputs:') {
+            currentSection = 'outputs';
+        } else if (line.startsWith('  - ') && currentSection) {
+            const match = line.match(/  - (.+) \((.+)\)/);
+            if (match) {
+                result[currentSection].push({
+                    name: match[1],
+                    type: match[2]
+                });
+            }
+        }
+    });
+    
+    return result;
 }

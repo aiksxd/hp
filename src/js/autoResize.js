@@ -27,12 +27,12 @@ class AdaptiveCanvasManager {
         // 页面可见性变化（处理标签页切换）
         document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
         
-        // 防止页面滚动
-        window.addEventListener('keydown', (e) => {
-            if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
-                e.preventDefault();
-            }
-        });
+        // // 防止页面滚动
+        // window.addEventListener('keydown', (e) => {
+        //     if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        //         e.preventDefault();
+        //     }
+        // });
     }
     
     handleResize() {

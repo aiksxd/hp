@@ -12,26 +12,75 @@ function popupMsg(message) {
     }, 3000);
 }
 
-// 页面加载完成后初始化标签切换
-document.addEventListener('DOMContentLoaded', function() {
-    const editorBtn = document.getElementById('editor-btn');
+function switchSection(sectionType) {
+    if (window.editContentType === sectionType) {
+        return;
+    }
+    clearTimeout(window.editorContentSaveTimeout);
+    window.editorContentSaveTimeout = undefined;
+    if (editorCommManager.nodeModified) {
+        editorCommManager.saveEditorContent();
+    }
+    const nodeEditorBtn = document.getElementById('node-editor-btn');
+    const codeEditorBtn = document.getElementById('code-editor-btn');
     const terminalBtn = document.getElementById('terminal-btn');
+    const filesBtn = document.getElementById('files-btn');
     const editorSection = document.querySelector('.multi-editors');
     const terminalSection = document.getElementById('terminal');
+    const filesSection = document.getElementById('files');
     
-    // 编辑器按钮点击事件
-    editorBtn.addEventListener('click', function() {
-        editorBtn.classList.add('active');
-        terminalBtn.classList.remove('active');
-        editorSection.classList.add('activePage');
-        terminalSection.classList.remove('activePage');
+    // 重置所有按钮和区域
+    [nodeEditorBtn, codeEditorBtn, terminalBtn, filesBtn].forEach(btn => {
+        btn?.classList.remove('active');
     });
+    [editorSection, terminalSection, filesSection].forEach(section => {
+        section?.classList.remove('activePage');
+    });
+
+    // 根据类型激活对应的按钮和区域
+    switch(sectionType) {
+        case 'node':
+            nodeEditorBtn?.classList.add('active');
+            editorSection?.classList.add('activePage');
+            window.editContentType = 'node';
+            if (editorCommManager.currentNodeId !== null) {
+                editorCommManager.handleNewDataComing(findById(window.graph._nodes, editorCommManager.currentNodeId))
+            }
+            break;
+        case 'code':
+            codeEditorBtn?.classList.add('active');
+            editorSection?.classList.add('activePage');
+            window.editContentType = 'code';
+            if (editorCommManager.currentNodeId !== null) {
+                editorCommManager.handleNewDataComing(findById(window.graph._nodes, editorCommManager.currentNodeId))
+            }
+            break;
+        case 'terminal':
+            terminalBtn?.classList.add('active');
+            terminalSection?.classList.add('activePage');
+            break;
+        case 'files':
+            filesBtn?.classList.add('active');
+            filesSection?.classList.add('activePage');
+            break;
+    }
+}
+const sectionOrder = ['files', 'terminal', 'node', 'code'];
+let currentSectionIndex = 0; // 跟踪当前激活的 section
+// Alt+N quickly change page
+document.addEventListener('keydown', function(event) {
+    if (event.altKey && event.key === 'n') {
+        // event.preventDefault(); // 阻止浏览器默认行为
+        
+        // 计算下一个 section 的索引
+        currentSectionIndex = (currentSectionIndex + 1) % sectionOrder.length;
+        
+        // 切换到下一个 section
+        switchSection(sectionOrder[currentSectionIndex]);
+    }
     
-    // 终端按钮点击事件
-    terminalBtn.addEventListener('click', function() {
-        terminalBtn.classList.add('active');
-        editorBtn.classList.remove('active');
-        terminalSection.classList.add('activePage');
-        editorSection.classList.remove('activePage');
-    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // what i want to write?
 });

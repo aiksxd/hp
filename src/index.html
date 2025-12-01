@@ -35,13 +35,16 @@
     
     <div id="editor-container">
         <nav id="main-editor-navs" class="navs">
-            <button class="nav-button active" id="editor-btn" title="代码编辑器">{ }</button>
-            <button class="nav-button" id="terminal-btn" title="终端">>_</button>
+            <button onclick="switchSection('files')" class="nav-button" id="files-btn" title="Files">../</button>
+            <button onclick="switchSection('terminal')" class="nav-button" id="terminal-btn" title="Terminal">>_</button>
+            <button onclick="switchSection('node')" class="nav-button" id="node-editor-btn" title="Editor">{&nbsp&nbsp}</button>
+            <button onclick="switchSection('code')" class="nav-button active" id="code-editor-btn" title="Editor">f(x)</button>
         </nav>
         <section class="multi-editors activePage">
             <div id="main-editor" class="editor"></div>
         </section>
         <section id="terminal"></section>
+        <section id="files"></section>
     </div>
 
     <script src="./js/main.js"></script>
@@ -102,7 +105,8 @@
                 
                 // 终端输入处理
                 this.terminal.onData(data => {
-                    this.sendInput(data);
+                    console.log(data)
+                    // this.sendInput(data);
                 });
             }
             
