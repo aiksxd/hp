@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
@@ -10,6 +12,30 @@
     "core:window:allow-start-dragging",
     "core:window:allow-minimize",
     "core:window:allow-close",
-    "core:window:allow-toggle-maximize"
+    "core:window:allow-toggle-maximize",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "cmd",
+          "cmd": "cmd.exe",
+          "args": true
+        },
+        {
+          "name": "zsh",
+          "cmd": "/bin/zsh",
+          "args": true
+        },
+        {
+          "name": "bash",
+          "cmd": "/bin/bash",
+          "args": true
+        }
+      ]
+    },
+    "fs:default",
+    "dialog:allow-open",
+    "dialog:default",
+    "python:default", "fs:allow-app-write"
   ]
 }

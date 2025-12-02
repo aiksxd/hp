@@ -116,7 +116,7 @@ class EditorCommunicationManager {
     handleNewDataComing(nodeData) {
         if (this.isUpdating) return;
         let data;
-        let contentType = 'node-config';
+        let contentType = 'plaintext';
         // provide new data and mark it false for preventing saving data 
         // when change editor content without modification
         this.isNodeModified = false;
@@ -128,25 +128,24 @@ class EditorCommunicationManager {
                     inputs: nodeData.inputs,
                     outputs: nodeData.outputs,
                 };
+                contentType = 'yaml';
             break;
             case 'code':
                 if (nodeData.properties.fn) {
                     data = nodeData.properties.fn;
                 } else {
                     let inputsCode = '';
-                    let outputsCode = ['', ''];
+                    let outputsCode = '';
                     if (nodeData.inputs) {
-                        inputsCode = nodeData.inputs.map((input, i) => `let ${input.name} = this.getInputData(${i});`).join('\n');
+                        inputsCode = nodeData.inputs.map((input, i) => `let ${input.name} = inputs.input_${i};`).join('\n');
                     }
                     if (nodeData.outputs) {
-                        outputsCode[0] = ( nodeData.outputs.map(output => `let ${output.name} = undefined;`).join('\n') );
-                        outputsCode[1] = ( nodeData.outputs.map((output, i) => `this.setOutputData(${i}) = ${output.name};`).join('\n') );
+                        outputsCode = nodeData.outputs.map(output => `${output.name}: ""`).join(', ');
                     }
                     data = [
                         `${inputsCode}`,
-                        `${outputsCode[0]}`,
                         `// write your code here`,
-                        `${outputsCode[1]}`
+                        `return {${outputsCode}}`
                     ].join('\n');
                 }
                 contentType = nodeData.properties.codeType;
@@ -166,22 +165,9 @@ class EditorCommunicationManager {
     updateMonacoEditor(data, contentType) {
         this.isUpdating = true;
         const model = window.editor.getModel();
-
-        switch (window.editContentType) {
-            case 'node':
-                window.editor.setValue(jsonToSimple(data));
-                monaco.editor.setModelLanguage(model, 'yaml');
-            break;
-            case 'code':
-                window.editor.setValue(data);
-                monaco.editor.setModelLanguage(model, contentType);
-            break;
-            default:
-                window.editor.setValue(data);
-                monaco.editor.setModelLanguage(model, 'plaintext');
-            break;
-        }
-        
+        window.editor.setValue(data);
+        monaco.editor.setModelLanguage(model, contentType);
+        // waiting editor update content
         setTimeout(() => {
             this.isUpdating = false;
         }, 100);
@@ -223,7 +209,7 @@ class EditorCommunicationManager {
         while(node.outputs && node.outputs.length) {
             node.removeOutput(0);
         }
-        
+        node.title = newData.title;
         // 添加新输入
         node.addInputs(newData.inputs.map(input => [
             input.name, 

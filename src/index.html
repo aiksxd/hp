@@ -1,260 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Hardly Print Editor</title>
+        <!-- <link rel="stylesheet" href="./css/workflow.css"> -->
+        <link rel="stylesheet" href="./css/monaco.css" />
+        <link rel="stylesheet" href="./css/xterm.css" />
+        <link rel="stylesheet" href="./css/main.css" />
+        <link rel="stylesheet" href="./css/litegraph.css" />
+        <link rel="stylesheet" href="./css/ui.css" />
+        <link rel="stylesheet" href="./css/titlebar.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <script src="./js/lib/xterm.js"></script>
+        <script src="./js/lib/addon-fit.js"></script>
+        <script src="./js/lib/addon-attach.js"></script>
+        <script src="./js/lib/litegraph.core.min.js"></script>
+        <script src="./js/vs/loader.js"></script>
+        <script type="module" src="./js/tauri.js"></script>
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Hardly Print Editor</title>
-    <!-- <link rel="stylesheet" href="./css/workflow.css"> -->
-    <link rel="stylesheet" href="./css/monaco.css">
-    <link rel="stylesheet" href="./css/xterm.css">
-    <link rel="stylesheet" href="./css/main.css">
-    <link rel="stylesheet" href="./css/litegraph.css">
-    <link rel="stylesheet" href="./css/ui.css">
-    <link rel="stylesheet" href="./css/titlebar.css">
-    <link rel="stylesheet" href="./css/all.min.css">
-    <script src="./js/lib/xterm.js"></script>
-    <script src="./js/lib/addon-fit.js"></script>
-    <script src="./js/lib/addon-attach.js"></script>
-    <script src="./js/lib/litegraph.core.min.js"></script>
-    <script src="./js/vs/loader.js"></script>
-</head>
-
-<body style="background-color: transparent">
-    <div class="titlebar" data-tauri-drag-region>
-        <div class="controls">
-            <button id="titlebar-minimize">-</button>
-            <button id="titlebar-maximize">f</button>
-            <button id="titlebar-close">x</button>
+    <body style="background-color: transparent">
+        <div class="titlebar" data-tauri-drag-region>
+            <div class="controls">
+                <button id="titlebar-minimize">-</button>
+                <button id="titlebar-maximize">f</button>
+                <button id="titlebar-close">x</button>
+            </div>
         </div>
-    </div>
-    <div class="container">
-        <div class="canvas-container">
-            <canvas id="workflowCanvas"></canvas>
+        <div class="container">
+            <div class="canvas-container">
+                <canvas id="workflowCanvas"></canvas>
+            </div>
         </div>
-    </div>
-    
-    <div id="editor-container">
-        <nav id="main-editor-navs" class="navs">
-            <button onclick="switchSection('files')" class="nav-button" id="files-btn" title="Files">../</button>
-            <button onclick="switchSection('terminal')" class="nav-button" id="terminal-btn" title="Terminal">>_</button>
-            <button onclick="switchSection('node')" class="nav-button" id="node-editor-btn" title="Editor">{&nbsp&nbsp}</button>
-            <button onclick="switchSection('code')" class="nav-button active" id="code-editor-btn" title="Editor">f(x)</button>
-        </nav>
-        <section class="multi-editors activePage">
-            <div id="main-editor" class="editor"></div>
-        </section>
-        <section id="terminal"></section>
-        <section id="files"></section>
-    </div>
 
-    <script src="./js/main.js"></script>
-    <script src="./js/ui.js"></script>
-    <script src="./js/monaco.js"></script>
-    <script src="./js/workflow.js"></script>
-    <script src="./js/nodes.js"></script>
-    <script src="./js/autoResize.js"></script>
-    <script>
-        const { invoke } = window.__TAURI__.core;
-        const { listen } = window.__TAURI__.event;
+        <div id="editor-container">
+            <nav id="main-editor-navs" class="navs">
+                <button onclick="switchSection('files')" class="nav-button" id="files-btn" title="Files">../</button>
+                <button onclick="switchSection('terminal')" class="nav-button" id="terminal-btn" title="Terminal">>_</button>
+                <button onclick="switchSection('node')" class="nav-button" id="node-editor-btn" title="Editor">{&nbsp&nbsp}</button>
+                <button onclick="switchSection('code')" class="nav-button active" id="code-editor-btn" title="Editor">f(x)</button>
+            </nav>
+            <section class="multi-editors activePage">
+                <div id="main-editor" class="editor"></div>
+            </section>
+            <section id="terminal"></section>
+            <section id="files"></section>
+        </div>
 
-        // 主初始化函数
-        document.addEventListener('DOMContentLoaded', function() {
-            // 初始化自适应画布管理器
-            const canvasManager = new AdaptiveCanvasManager('workflowCanvas');
+        <script src="./js/main.js"></script>
+        <script src="./js/ui.js"></script>
+        <script src="./js/monaco.js"></script>
+        <script src="./js/workflow.js"></script>
+        <script src="./js/derivedNodes.js"></script>
+        <script src="./js/nodes.js"></script>
+        <script src="./js/autoResize.js"></script>
+        <script src="./js/terminal.js"></script>
+        <script>
+            const canvasManager = new AdaptiveCanvasManager("workflowCanvas");
 
             initializeDefaultNodes();
-            
+
             // 创建LiteGraph实例
             setTimeout(() => {
                 window.graph = new LGraph();
-                window.canvas = new LGraphCanvas("#workflowCanvas", window.graph);
-                // 启动图形
+                window.canvas = new LGraphCanvas(
+                    "#workflowCanvas",
+                    window.graph,
+                );
             }, 10);
-        });
-
-        class TerminalComponent {
-            constructor(containerId) {
-                this.terminal = new Terminal({
-                    convertEol: true,
-                    theme: {
-                        background: '#282C33',
-                        foreground: '#cccccc',
-                        cursor: '#ffffff',
-                        black: '#000000',
-                        red: '#cd3131',
-                        green: '#0dbc79',
-                        yellow: '#e5e510',
-                        blue: '#2472c8',
-                        magenta: '#bc3fbc',
-                        cyan: '#11a8cd',
-                        white: '#e5e5e5'
-                    }
-                });
-                
-                const container = document.getElementById(containerId);
-                this.terminal.open(container);
-                
-                this.isProcessRunning = false;
-                this.setupEventListeners();
-                this.setupKeyboardHandlers();
-            }
-            
-            async setupEventListeners() {
-                try {
-                    const { listen } = window.__TAURI__.event;
-                    
-                    // 监听后端输出事件
-                    this.unlistenOutput = await listen('command-output', (event) => {
-                        const payload = event.payload;
-                        this.terminal.write(payload.content);
-                    });
-                    
-                    // 监听命令完成事件（如果需要）
-                    this.unlistenCompleted = await listen('command-completed', () => {
-                        this.terminal.write('\r\n命令执行完成\r\n');
-                    });
-                    
-                } catch (error) {
-                    console.error('设置事件监听器失败:', error);
-                    this.terminal.write('终端初始化失败，请刷新页面\r\n');
-                }
-                
-                // 终端输入处理
-                this.terminal.onData(data => {
-                    console.log(data)
-                    // this.sendInput(data);
-                });
-            }
-            
-            setupKeyboardHandlers() {
-                // 处理特殊按键
-                this.terminal.attachCustomKeyEventHandler((event) => {
-                    // 处理 Ctrl+C
-                    if (event.ctrlKey && event.code === 'KeyC' && event.type === 'keydown') {
-                        this.sendInput('\x03'); // Ctrl+C 的转义序列
-                        return false;
-                    }
-                    // 处理 Ctrl+D
-                    if (event.ctrlKey && event.code === 'KeyD' && event.type === 'keydown') {
-                        this.sendInput('\x04'); // Ctrl+D 的转义序列
-                        return false;
-                    }
-                    // 处理 Ctrl+Z
-                    if (event.ctrlKey && event.code === 'KeyZ' && event.type === 'keydown') {
-                        this.sendInput('\x1a'); // Ctrl+Z 的转义序列
-                        return false;
-                    }
-                    return true;
-                });
-            }
-            
-            async executeCommand(cmd, args = []) {
-                try {
-                    // 清除终端
-                    this.terminal.clear();
-                    this.terminal.write(`$ ${cmd} ${args.join(' ')}\r\n`);
-                    
-                    // 执行命令
-                    await invoke('execute_command_realtime', { 
-                        cmd, 
-                        args 
-                    });
-
-                    this.isProcessRunning = true;
-
-                } catch (error) {
-                    this.terminal.write(`\r\n错误: ${error}\r\n`);
-                }
-            }
-            
-            async sendInput(data) {
-                // 检查进程是否在运行
-                if (!this.isProcessRunning) {
-                    // 如果没有运行中的进程，直接显示输入
-                    this.terminal.write(data);
-                    return;
-                }
-
-                try {
-                    // 发送用户输入到子进程
-                    await invoke('send_terminal_input', { input: data });
-                } catch (error) {
-                    if (error.includes('进程已结束') || error.includes('管道被关闭')) {
-                        this.isProcessRunning = false;
-                        this.terminal.write('\r\n进程已结束\r\n');
-                    } else {
-                        console.error('发送输入失败:', error);
-                    }
-                }
-            }
-            
-            async killProcess() {
-                try {
-                    await invoke('kill_current_process');
-                    this.isProcessRunning = false;
-                    this.terminal.write('\r\n进程已终止\r\n');
-                } catch (error) {
-                    console.error('终止进程失败:', error);
-                }
-            }
-            
-            // 清理函数
-            destroy() {
-                if (this.unlistenOutput) {
-                    this.unlistenOutput();
-                }
-                if (this.unlistenCompleted) {
-                    this.unlistenCompleted();
-                }
-                this.terminal.dispose();
-            }
-        }
-
-        // 全局变量以便其他脚本可以访问
-        window.terminal = new TerminalComponent('terminal');
-        
-        // 测试函数 - 可以在控制台调用
-        window.runCommand = function(cmd, args = []) {
-            window.terminal.executeCommand(cmd, args);
-        };
-        
-        // 终止当前进程的函数
-        window.killProcess = function() {
-            window.terminal.killProcess();
-        };
-        
-        // 运行交互式 shell 的命令
-        window.startShell = function() {
-            const isWindows = navigator.platform.toLowerCase().includes('win');
-            if (isWindows) {
-                window.terminal.executeCommand('cmd', []);
-            } else {
-                window.terminal.executeCommand('bash', []);
-            }
-        };
-        
-        // 默认启动一个交互式 shell
-        window.startShell();
-    </script>
-    <!-- 小土星悬浮菜单球 -->
-    <link rel="stylesheet" href="./css/floatball.css">
-    <div class="saturn-menu-container">
-        <div class="saturn-ring-lower saturn-ring"></div>
-        <div class="saturn-ring-upper saturn-ring"></div>
-        <div class="saturn-ball">
-            <div class="glow"></div>
-            <nav class="saturn-icon" id="setting">
-                <svg width="30" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 21h-4l-.551-2.48a7 7 0 0 1-1.819-1.05l-2.424.763-2-3.464 1.872-1.718a7 7 0 0 1 0-2.1L3.206 9.232l2-3.464 2.424.763A7 7 0 0 1 9.45 5.48L10 3h4l.551 2.48a7 7 0 0 1 1.819 1.05l2.424-.763 2 3.464-1.872 1.718a7 7 0 0 1 0 2.1l1.872 1.718-2 3.464-2.424-.763a7 7 0 0 1-1.819 1.052z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
-            </nav>
-            <nav class="icon-item" id="import" tabindex="0" role="button">
-                <svg width="30" height="30" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14 9a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3a1 1 0 0 1 2 0v3h10v-3a1 1 0 0 1 1-1M8 1a1 1 0 0 1 1 1v4.586l1.293-1.293a1 1 0 1 1 1.414 1.414L8 10.414 4.293 6.707a1 1 0 0 1 1.414-1.414L7 6.586V2a1 1 0 0 1 1-1"/></svg>
-            </nav>
-            <nav class="icon-item" id="outport" tabindex="0" role="button">
-                <svg width="30" height="30" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14 9.004a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3a1 1 0 0 1 2 0v3h10v-3a1 1 0 0 1 1-1M8 1.59l3.707 3.707a1 1 0 0 1-1.414 1.414L9 5.418v4.586a1 1 0 1 1-2 0V5.418L5.707 6.711a1 1 0 0 1-1.414-1.414z"/></svg>
-            </nav>
+        </script>
+        <!-- 小土星悬浮菜单球 -->
+        <link rel="stylesheet" href="./css/floatball.css" />
+        <div class="saturn-menu-container">
+            <div class="saturn-ring-lower saturn-ring"></div>
+            <div class="saturn-ring-upper saturn-ring"></div>
+            <div class="saturn-ball">
+                <div class="glow"></div>
+                <nav class="icon-item" id="setting">
+                    <svg width="30" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.9 12.66a1 1 0 0 1 0-1.32l1.28-1.44a1 1 0 0 0 .12-1.17l-2-3.46a1 1 0 0 0-1.07-.48l-1.88.38a1 1 0 0 1-1.15-.66l-.61-1.83a1 1 0 0 0-.95-.68h-4a1 1 0 0 0-1 .68l-.56 1.83a1 1 0 0 1-1.15.66L5 4.79a1 1 0 0 0-1 .48L2 8.73a1 1 0 0 0 .1 1.17l1.27 1.44a1 1 0 0 1 0 1.32L2.1 14.1a1 1 0 0 0-.1 1.17l2 3.46a1 1 0 0 0 1.07.48l1.88-.38a1 1 0 0 1 1.15.66l.61 1.83a1 1 0 0 0 1 .68h4a1 1 0 0 0 .95-.68l.61-1.83a1 1 0 0 1 1.15-.66l1.88.38a1 1 0 0 0 1.07-.48l2-3.46a1 1 0 0 0-.12-1.17ZM18.41 14l.8.9-1.28 2.22-1.18-.24a3 3 0 0 0-3.45 2L12.92 20h-2.56L10 18.86a3 3 0 0 0-3.45-2l-1.18.24-1.3-2.21.8-.9a3 3 0 0 0 0-4l-.8-.9 1.28-2.2 1.18.24a3 3 0 0 0 3.45-2L10.36 4h2.56l.38 1.14a3 3 0 0 0 3.45 2l1.18-.24 1.28 2.22-.8.9a3 3 0 0 0 0 3.98m-6.77-6a4 4 0 1 0 4 4 4 4 0 0 0-4-4m0 6a2 2 0 1 1 2-2 2 2 0 0 1-2 2"/></svg>
+                </nav>
+                <nav class="icon-item" id="import" tabindex="0" role="button">
+                    <svg width="30" height="30" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14 9a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3a1 1 0 0 1 2 0v3h10v-3a1 1 0 0 1 1-1M8 1a1 1 0 0 1 1 1v4.586l1.293-1.293a1 1 0 1 1 1.414 1.414L8 10.414 4.293 6.707a1 1 0 0 1 1.414-1.414L7 6.586V2a1 1 0 0 1 1-1"/></svg>
+                </nav>
+                <nav class="icon-item" id="outport" tabindex="0" role="button">
+                    <svg width="30" height="30" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M14 9.004a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3a1 1 0 0 1 2 0v3h10v-3a1 1 0 0 1 1-1M8 1.59l3.707 3.707a1 1 0 0 1-1.414 1.414L9 5.418v4.586a1 1 0 1 1-2 0V5.418L5.707 6.711a1 1 0 0 1-1.414-1.414z"/></svg>
+                </nav>
+            </div>
         </div>
-    </div>
-    <script src="./js/floatball.js"></script>
-</body>
+        <script src="./js/floatball.js"></script>
 
+        <link rel="stylesheet" href="./css/debugToolbar.css" />
+        <div class="debug-toolbar" id="debugToolbar">
+            <div class="debug-button" id="btnContinue" title="继续运行">
+                <svg width="25" height="25" viewBox="0 0 24 24" data-name="Flat Color" xmlns="http://www.w3.org/2000/svg" class="icon flat-color"><path d="m18.6 11.2-12-9A1 1 0 0 0 5 3v18a1 1 0 0 0 .55.89 1 1 0 0 0 1-.09l12-9a1 1 0 0 0 0-1.6Z"/></svg>
+                <span class="button-text">继续运行 (F9)</span>
+            </div>
+
+            <div class="debug-button" id="btnStepOver" title="步过">
+                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 51.531 51.531" xml:space="preserve"><path d="M44.9 1.963a6.63 6.63 0 0 0-6.631 6.631V23.81a4 4 0 0 0-1-.831L6 4.926A3.998 3.998 0 0 0 0 8.39v36.104a4.002 4.002 0 0 0 6 3.465l31.269-18.053a4 4 0 0 0 1-.832v13.863a6.631 6.631 0 0 0 13.262 0V8.594A6.63 6.63 0 0 0 44.9 1.963"/></svg>
+                <span class="button-text">步过 (F8)</span>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="debug-button" id="btnRestart" title="重新启动">
+                <svg width="30" height="30" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.75 8a4.5 4.5 0 0 1-8.61 1.834l-1.391.565A6.001 6.001 0 0 0 14.25 8 6 6 0 0 0 3.5 4.334V2.5H2v4l.75.75h3.5v-1.5H4.352A4.5 4.5 0 0 1 12.75 8"/></svg>
+                <span class="button-text">重新启动</span>
+            </div>
+
+            <div class="debug-button active" id="btnStop" title="停止调试">
+                <svg width="20" height="20" viewBox="0 0 24 24" data-name="Flat Color" xmlns="http://www.w3.org/2000/svg" class="icon flat-color"><rect x="2" y="2" width="20" height="20" rx="2"/></svg>
+                <span class="button-text">停止调试 (Shift+F5)</span>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="debug-button" id="btnToggleBreakpoint" title="切换断点">
+                <svg width="30" height="30" viewBox="0 -15.89 87.181 87.181" xmlns="http://www.w3.org/2000/svg"><g data-name="Group 18" transform="translate(-355.391 -272.962)"><circle data-name="Ellipse 4" cx="4.92" cy="4.92" r="4.92" transform="rotate(-45 525.115 -285.089)"/></g><g data-name="Group 19"><path data-name="Path 18" d="M86.888 14.39C84.627 7.3 71.127 7.91 65.157 8.54a27.744 27.744 0 0 0-47.44 15.14c-5.24 2.94-16.6 10.25-14.34 17.34 1.62 5.08 8.98 6.2 15.22 6.2a60 60 0 0 0 6.51-.37 27.7 27.7 0 0 0 47.42-15.11c5.23-2.93 16.621-10.26 14.361-17.35M8.617 39.35c-.529-1.64 3.5-5.62 8.93-9.14a27.9 27.9 0 0 0 3.64 11.42c-6.46.29-12.039-.63-12.57-2.28m43.26 9.5a22.17 22.17 0 0 1-19.63-3.05 136.5 136.5 0 0 0 33.82-10.77 22.17 22.17 0 0 1-14.19 13.82m-4.01-12.58a134 134 0 0 1-20.5 4.76 22.3 22.3 0 0 1-3.38-6.58 22.183 22.183 0 0 1 14.4-27.89 22.17 22.17 0 0 1 23.45 6.5 2.3 2.3 0 0 1 .24.29l.039.04a22.3 22.3 0 0 1 5.2 14.91 136 136 0 0 1-19.449 7.97m24.85-11.07a26.8 26.8 0 0 0-1.19-5.91 27.3 27.3 0 0 0-2.439-5.51c6.449-.28 12.029.63 12.56 2.28s-3.491 5.62-8.931 9.14"/></g><g data-name="Group 20" transform="translate(-355.391 -272.962)"/><g data-name="Group 21"><path data-name="Path 20" d="M60.72 26.419a2.75 2.75 0 0 1-2.59-1.825 15.3 15.3 0 0 0-4.807-6.7 2.75 2.75 0 0 1 3.463-4.274 20.8 20.8 0 0 1 6.523 9.118 2.752 2.752 0 0 1-2.59 3.677Z"/></g><g data-name="Group 22"><path data-name="Path 21" d="M47.521 14.851a2.8 2.8 0 0 1-.6-.066 15 15 0 0 0-1.972-.307A2.75 2.75 0 1 1 45.443 9a21 21 0 0 1 2.676.417 2.75 2.75 0 0 1-.6 5.434Z"/></g></svg>
+                <span class="button-text">切换断点 (F9)</span>
+            </div>
+
+            <!-- <div class="debug-status" id="debugStatus">
+            <i class="fas fa-pause-circle"></i> 已暂停
+        </div> -->
+
+            <div class="status-indicator status-running">
+                <div class="status-dot"></div>
+                <span>正在运行</span>
+            </div>
+        </div>
+        <script src="./js/debugToolbar.js"></script>
+    </body>
 </html>

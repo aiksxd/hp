@@ -3,541 +3,642 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小Icon导航栏 - 悬停效果</title>
+    <title>RustRover风格调试悬浮菜单</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', 'JetBrains Mono', monospace;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #e0e0ff;
             padding: 20px;
         }
         
         .container {
-            text-align: center;
-            max-width: 900px;
             width: 100%;
-            padding: 30px;
-            background: rgba(10, 10, 30, 0.8);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(100, 100, 255, 0.1);
-            backdrop-filter: blur(10px);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            width: 100%;
         }
         
         h1 {
+            color: #4ec9b0;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-            color: #aaccff;
-            font-weight: 300;
             letter-spacing: 1px;
         }
         
         .subtitle {
+            color: #9cdcfe;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .demo-area {
+            background: #252526;
+            border-radius: 8px;
+            padding: 25px;
             margin-bottom: 40px;
-            color: #8899cc;
-            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3e3e42;
         }
         
-        /* 导航栏容器 */
-        .icon-navbar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(20, 20, 50, 0.8);
-            border-radius: 20px;
-            padding: 25px 20px;
-            box-shadow: 
-                inset 0 0 20px rgba(0, 0, 0, 0.3),
-                0 10px 30px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(100, 100, 255, 0.15);
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .icon-navbar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(100, 150, 255, 0.5), transparent);
-        }
-        
-        .icon-navbar::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(100, 150, 255, 0.5), transparent);
-        }
-        
-        /* 导航标题 */
-        .nav-title {
-            font-size: 1.3rem;
-            color: #88aaff;
-            margin-bottom: 25px;
-            font-weight: 300;
-            letter-spacing: 1px;
-            position: relative;
-            padding-bottom: 10px;
-        }
-        
-        .nav-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 25%;
-            width: 50%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #88aaff, transparent);
-        }
-        
-        /* 图标容器 */
-        .icon-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 25px;
-            width: 100%;
-        }
-        
-        /* 图标项 */
-        .icon-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            height: 100px;
-            background: rgba(30, 30, 70, 0.7);
-            border-radius: 20px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
-            box-shadow: 
-                0 5px 15px rgba(0, 0, 0, 0.2),
-                inset 0 0 0 1px rgba(100, 150, 255, 0.1);
-        }
-        
-        /* 图标项悬停效果 */
-        .icon-item:hover {
-            transform: translateY(-10px) scale(1.1);
-            box-shadow: 
-                0 15px 30px rgba(0, 0, 0, 0.4),
-                0 0 25px rgba(100, 150, 255, 0.3),
-                inset 0 0 0 1px rgba(100, 150, 255, 0.2);
-            background: rgba(40, 40, 100, 0.8);
-        }
-        
-        /* 图标背景光效 */
-        .icon-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, rgba(100, 150, 255, 0.1), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 1;
-        }
-        
-        .icon-item:hover::before {
-            opacity: 1;
-        }
-        
-        /* 图标 */
-        .icon-item i {
-            font-size: 32px;
-            color: #aaccff;
-            margin-bottom: 12px;
-            transition: all 0.4s ease;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .icon-item:hover i {
-            color: #ffffff;
-            transform: scale(1.2) rotate(5deg);
-            filter: drop-shadow(0 0 8px rgba(100, 150, 255, 0.7));
-        }
-        
-        /* 图标文字 */
-        .icon-text {
-            font-size: 14px;
-            color: #ccddff;
-            font-weight: 300;
-            transition: all 0.4s ease;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .icon-item:hover .icon-text {
-            color: #ffffff;
-            transform: translateY(2px);
-            letter-spacing: 0.5px;
-        }
-        
-        /* 悬停提示 */
-        .icon-tooltip {
-            position: absolute;
-            bottom: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(20, 20, 40, 0.95);
-            color: #ffffff;
-            padding: 8px 15px;
-            border-radius: 10px;
-            font-size: 13px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 10;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(100, 150, 255, 0.2);
-        }
-        
-        .icon-tooltip::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 12px;
-            background: rgba(20, 20, 40, 0.95);
-            border-left: 1px solid rgba(100, 150, 255, 0.2);
-            border-top: 1px solid rgba(100, 150, 255, 0.2);
-            transform: rotate(45deg);
-        }
-        
-        .icon-item:hover .icon-tooltip {
-            opacity: 1;
-            visibility: visible;
-            bottom: -45px;
-        }
-        
-        /* 激活状态 */
-        .icon-item.active {
-            background: rgba(60, 80, 160, 0.8);
-            box-shadow: 
-                0 10px 20px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(100, 150, 255, 0.2),
-                inset 0 0 0 1px rgba(100, 150, 255, 0.3);
-        }
-        
-        .icon-item.active i {
-            color: #ffffff;
-            filter: drop-shadow(0 0 5px rgba(100, 150, 255, 0.8));
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .icon-container {
-                gap: 15px;
-            }
-            
-            .icon-item {
-                width: 85px;
-                height: 85px;
-            }
-            
-            .icon-item i {
-                font-size: 28px;
-                margin-bottom: 10px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .icon-container {
-                gap: 12px;
-            }
-            
-            .icon-item {
-                width: 75px;
-                height: 75px;
-            }
-            
-            .icon-item i {
-                font-size: 24px;
-                margin-bottom: 8px;
-            }
-            
-            .icon-text {
-                font-size: 12px;
-            }
-        }
-        
-        /* 使用说明 */
-        .instructions {
-            margin-top: 40px;
+        .code-preview {
+            background: #1e1e1e;
+            border-radius: 6px;
             padding: 20px;
-            background: rgba(20, 20, 60, 0.5);
-            border-radius: 15px;
-            text-align: left;
+            margin-top: 20px;
+            overflow-x: auto;
+            border: 1px solid #3e3e42;
         }
         
-        .instructions h3 {
-            color: #88aaff;
-            margin-bottom: 15px;
-            font-weight: 400;
-        }
-        
-        .instructions ul {
-            padding-left: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .instructions li {
-            margin-bottom: 8px;
-            color: #ccddff;
+        .code-preview pre {
+            color: #d4d4d4;
             line-height: 1.5;
         }
         
-        /* 状态指示 */
-        .status {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(30, 30, 80, 0.6);
-            border-radius: 10px;
-            font-size: 0.95rem;
-            color: #aaccff;
+        .code-comment {
+            color: #6a9955;
         }
         
-        .status span {
-            color: #88ff88;
-            font-weight: 500;
+        .code-keyword {
+            color: #569cd6;
         }
         
-        /* 星空背景 */
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
+        .code-function {
+            color: #dcdcaa;
         }
         
-        .star {
-            position: absolute;
-            background-color: white;
+        .code-string {
+            color: #ce9178;
+        }
+        
+        .debug-info {
+            background: #0e293a;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 4px solid #007acc;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        
+        .status-running {
+            background: rgba(46, 125, 50, 0.2);
+            color: #6bbf7a;
+        }
+        
+        .status-paused {
+            background: rgba(251, 192, 45, 0.2);
+            color: #fbc02d;
+        }
+        
+        .status-stopped {
+            background: rgba(211, 47, 47, 0.2);
+            color: #ef5350;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            animation: twinkle 3s infinite;
+            margin-right: 6px;
         }
         
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
+        .status-running .status-dot {
+            background: #6bbf7a;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-paused .status-dot {
+            background: #fbc02d;
+        }
+        
+        .status-stopped .status-dot {
+            background: #ef5350;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
             50% { opacity: 1; }
+            100% { opacity: 0.6; }
         }
         
-        /* 点击动画 */
-        .icon-item.clicked {
-            animation: clickEffect 0.4s ease;
+        .debugger-state {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
         }
         
-        @keyframes clickEffect {
-            0% { transform: scale(1); }
-            50% { transform: scale(0.9); }
-            100% { transform: scale(1); }
+        .current-line {
+            background: #2a2d2e;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 3px solid #007acc;
+            margin-top: 10px;
+        }
+        
+        /* 悬浮调试菜单样式 */
+        .debug-toolbar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(37, 37, 38, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: 1px solid #3e3e42;
+        }
+        
+        .debug-toolbar:hover {
+            box-shadow: 
+                0 6px 25px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateX(-50%) translateY(-2px);
+        }
+        
+        .debug-button {
+            background: transparent;
+            border: none;
+            color: #cccccc;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0 4px;
+            position: relative;
+        }
+        
+        .debug-button:hover {
+            background: rgba(90, 93, 94, 0.5);
+            color: #ffffff;
+        }
+        
+        .debug-button:active {
+            transform: scale(0.95);
+            background: rgba(90, 93, 94, 0.7);
+        }
+        
+        .debug-button.active {
+            background: rgba(0, 122, 204, 0.2);
+            color: #007acc;
+        }
+        
+        .debug-button.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .debug-button.disabled:hover {
+            background: transparent;
+            color: #cccccc;
+        }
+        
+        .button-text {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        .debug-button:hover .button-text {
+            opacity: 1;
+        }
+        
+        .separator {
+            width: 1px;
+            height: 24px;
+            background: #3e3e42;
+            margin: 0 8px;
+        }
+        
+        .debug-status {
+            margin-left: 12px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #cccccc;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #6a6a6a;
+            font-size: 0.9rem;
+            padding: 20px;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .debug-toolbar {
+                bottom: 20px;
+                padding: 8px 12px;
+            }
+            
+            .debug-button {
+                width: 36px;
+                height: 36px;
+                margin: 0 2px;
+            }
+            
+            .debug-status {
+                display: none;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- 星空背景 -->
-    <div class="stars" id="stars"></div>
-    
     <div class="container">
-        <h1>小Icon导航栏</h1>
-        <div class="subtitle">悬停图标查看精美动画效果，点击图标切换激活状态</div>
+        <header>
+            <h1><i class="fas fa-bug"></i> RustRover风格调试工具栏</h1>
+            <p class="subtitle">黑色主题悬浮调试菜单，支持运行、下一步、停止等操作</p>
+        </header>
         
-        <!-- 图标导航栏 -->
-        <div class="icon-navbar">
-            <div class="nav-title">快捷导航</div>
+        <main>
+            <div class="demo-area">
+                <h2><i class="fas fa-code"></i> 调试演示</h2>
+                <p>这是一个模拟的调试环境，您可以使用下方的悬浮调试工具栏来控制调试过程。</p>
+                
+                <div class="debug-info">
+                    <h3><i class="fas fa-info-circle"></i> 当前调试状态</h3>
+                    <div class="debugger-state">
+                        <div class="status-indicator status-running">
+                            <div class="status-dot"></div>
+                            <span>正在运行</span>
+                        </div>
+                        <span>当前线程: main (ID: 1)</span>
+                    </div>
+                    
+                    <div class="current-line">
+                        <i class="fas fa-caret-right"></i> 当前执行行: <strong>let result = calculate_sum(5, 10);</strong> (第27行)
+                    </div>
+                </div>
+                
+                <div class="code-preview">
+                    <h4><i class="fas fa-file-code"></i> 示例代码 (main.rs)</h4>
+                    <pre>
+<span class="code-comment">// 计算两个数的和</span>
+<span class="code-keyword">fn</span> <span class="code-function">calculate_sum</span>(a: i32, b: i32) -> i32 {
+    <span class="code-keyword">let</span> sum = a + b;
+    <span class="code-comment">// 设置断点</span>
+    sum  <span class="code-comment">// 第10行</span>
+}
+
+<span class="code-keyword">fn</span> <span class="code-function">main</span>() {
+    <span class="code-keyword">let</span> x = 5;
+    <span class="code-keyword">let</span> y = 10;
+    
+    <span class="code-comment">// 调试器当前暂停在这里</span>
+    <span class="code-keyword">let</span> result = calculate_sum(x, y);  <span class="code-comment">// 第18行</span>
+    
+    <span class="code-keyword">let</span> message = <span class="code-string">"计算结果："</span>;
+    println!(<span class="code-string">"{} {}"</span>, message, result);
+    
+    <span class="code-keyword">let</span> numbers = vec![1, 2, 3, 4, 5];
+    <span class="code-keyword">for</span> i <span class="code-keyword">in</span> numbers {
+        println!(<span class="code-string">"迭代值: {}"</span>, i);  <span class="code-comment">// 第25行</span>
+    }
+}</pre>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 悬浮调试工具栏 -->
+        <div class="debug-toolbar" id="debugToolbar">
+            <div class="debug-button" id="btnContinue" title="继续运行">
+                <i class="fas fa-play"></i>
+                <span class="button-text">继续运行 (F9)</span>
+            </div>
             
-            <div class="icon-container">
-                <!-- 首页 -->
-                <div class="icon-item active" id="home">
-                    <i class="fas fa-home"></i>
-                    <div class="icon-text">首页</div>
-                    <div class="icon-tooltip">返回首页</div>
-                </div>
-                
-                <!-- 搜索 -->
-                <div class="icon-item" id="search">
-                    <i class="fas fa-search"></i>
-                    <div class="icon-text">搜索</div>
-                    <div class="icon-tooltip">搜索内容</div>
-                </div>
-                
-                <!-- 消息 -->
-                <div class="icon-item" id="messages">
-                    <i class="fas fa-envelope"></i>
-                    <div class="icon-text">消息</div>
-                    <div class="icon-tooltip">查看消息</div>
-                </div>
-                
-                <!-- 设置 -->
-                <div class="icon-item" id="settings">
-                    <i class="fas fa-cog"></i>
-                    <div class="icon-text">设置</div>
-                    <div class="icon-tooltip">系统设置</div>
-                </div>
-                
-                <!-- 用户 -->
-                <div class="icon-item" id="user">
-                    <i class="fas fa-user"></i>
-                    <div class="icon-text">用户</div>
-                    <div class="icon-tooltip">个人中心</div>
-                </div>
-                
-                <!-- 帮助 -->
-                <div class="icon-item" id="help">
-                    <i class="fas fa-question-circle"></i>
-                    <div class="icon-text">帮助</div>
-                    <div class="icon-tooltip">获取帮助</div>
-                </div>
-                
-                <!-- 下载 -->
-                <div class="icon-item" id="download">
-                    <i class="fas fa-download"></i>
-                    <div class="icon-text">下载</div>
-                    <div class="icon-tooltip">下载文件</div>
-                </div>
-                
-                <!-- 收藏 -->
-                <div class="icon-item" id="favorite">
-                    <i class="fas fa-star"></i>
-                    <div class="icon-text">收藏</div>
-                    <div class="icon-tooltip">收藏内容</div>
-                </div>
+            <div class="debug-button" id="btnStepOver" title="步过">
+                <i class="fas fa-arrow-right"></i>
+                <span class="button-text">步过 (F8)</span>
+            </div>
+            
+            <div class="debug-button" id="btnStepInto" title="步入">
+                <i class="fas fa-arrow-down"></i>
+                <span class="button-text">步入 (F7)</span>
+            </div>
+            
+            <div class="debug-button" id="btnStepOut" title="步出">
+                <i class="fas fa-arrow-up"></i>
+                <span class="button-text">步出 (Shift+F8)</span>
+            </div>
+            
+            <div class="separator"></div>
+            
+            <div class="debug-button" id="btnRestart" title="重新启动">
+                <i class="fas fa-redo"></i>
+                <span class="button-text">重新启动</span>
+            </div>
+            
+            <div class="debug-button active" id="btnStop" title="停止调试">
+                <i class="fas fa-stop"></i>
+                <span class="button-text">停止调试 (Shift+F5)</span>
+            </div>
+            
+            <div class="separator"></div>
+            
+            <div class="debug-button" id="btnToggleBreakpoint" title="切换断点">
+                <i class="fas fa-circle"></i>
+                <span class="button-text">切换断点 (F9)</span>
+            </div>
+            
+            <div class="debug-button" id="btnViewBreakpoints" title="查看所有断点">
+                <i class="fas fa-code-branch"></i>
+                <span class="button-text">查看断点</span>
+            </div>
+            
+            <div class="debug-status" id="debugStatus">
+                <i class="fas fa-pause-circle"></i> 已暂停在第18行
             </div>
         </div>
         
-        <div class="status">
-            当前激活状态: <span id="active-status">首页</span>
-        </div>
-        
-        <div class="instructions">
-            <h3>设计特点：</h3>
-            <ul>
-                <li><strong>悬停效果</strong>：鼠标悬停时图标放大、上浮、颜色变亮，并有光效</li>
-                <li><strong>平滑动画</strong>：使用cubic-bezier缓动函数实现自然过渡</li>
-                <li><strong>视觉反馈</strong>：悬停时显示文字提示，点击时有动画反馈</li>
-                <li><strong>激活状态</strong>：点击图标切换激活状态，高亮显示当前选中项</li>
-                <li><strong>响应式设计</strong>：适配不同屏幕尺寸，移动端自动调整</li>
-                <li><strong>主题一致</strong>：采用深色宇宙主题，与整体设计协调</li>
-            </ul>
-        </div>
+        <footer>
+            <p>模拟 RustRover 调试工具栏 | 黑色主题 | 悬浮效果 | 点击反馈</p>
+            <p>使用 Font Awesome 图标和纯 CSS/JavaScript 实现</p>
+        </footer>
     </div>
 
     <script>
-        // 创建星空背景
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const starsCount = 150;
-            
-            for (let i = 0; i < starsCount; i++) {
-                const star = document.createElement('div');
-                star.classList.add('star');
-                
-                // 随机大小
-                const size = Math.random() * 3;
-                star.style.width = `${size}px`;
-                star.style.height = `${size}px`;
-                
-                // 随机位置
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.top = `${Math.random() * 100}%`;
-                
-                // 随机闪烁延迟
-                star.style.animationDelay = `${Math.random() * 3}s`;
-                
-                starsContainer.appendChild(star);
+        // 获取DOM元素
+        const debugToolbar = document.getElementById('debugToolbar');
+        const debugStatus = document.getElementById('debugStatus');
+        const statusIndicator = document.querySelector('.status-indicator');
+        const currentLine = document.querySelector('.current-line strong');
+        
+        // 调试状态
+        let debugState = 'paused'; // running, paused, stopped
+        let currentLineNumber = 18;
+        
+        // 获取所有按钮
+        const btnContinue = document.getElementById('btnContinue');
+        const btnStepOver = document.getElementById('btnStepOver');
+        const btnStepInto = document.getElementById('btnStepInto');
+        const btnStepOut = document.getElementById('btnStepOut');
+        const btnRestart = document.getElementById('btnRestart');
+        const btnStop = document.getElementById('btnStop');
+        const btnToggleBreakpoint = document.getElementById('btnToggleBreakpoint');
+        const btnViewBreakpoints = document.getElementById('btnViewBreakpoints');
+        
+        // 更新调试状态显示
+        function updateDebugStatus() {
+            if (debugState === 'running') {
+                debugStatus.innerHTML = '<i class="fas fa-play-circle"></i> 正在运行...';
+                statusIndicator.className = 'status-indicator status-running';
+                statusIndicator.innerHTML = '<div class="status-dot"></div><span>正在运行</span>';
+                btnStop.classList.remove('active');
+            } else if (debugState === 'paused') {
+                debugStatus.innerHTML = `<i class="fas fa-pause-circle"></i> 已暂停在第${currentLineNumber}行`;
+                statusIndicator.className = 'status-indicator status-paused';
+                statusIndicator.innerHTML = '<div class="status-dot"></div><span>已暂停</span>';
+                btnStop.classList.add('active');
+            } else if (debugState === 'stopped') {
+                debugStatus.innerHTML = '<i class="fas fa-stop-circle"></i> 调试已停止';
+                statusIndicator.className = 'status-indicator status-stopped';
+                statusIndicator.innerHTML = '<div class="status-dot"></div><span>已停止</span>';
+                btnStop.classList.add('active');
             }
         }
         
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            createStars();
-            setupIconInteractions();
+        // 更新当前行显示
+        function updateCurrentLine(line) {
+            currentLineNumber = line;
+            const lines = [
+                "let x = 5;",
+                "let y = 10;",
+                "let result = calculate_sum(x, y);",
+                "let message = \"计算结果：\";",
+                "println!(\"{} {}\", message, result);",
+                "let numbers = vec![1, 2, 3, 4, 5];",
+                "for i in numbers {",
+                "println!(\"迭代值: {}\", i);",
+                "}"
+            ];
+            
+            // 确保行号在有效范围内
+            if (line < 17) line = 17;
+            if (line > 25) line = 25;
+            
+            const lineIndex = line - 17;
+            currentLine.textContent = lines[lineIndex - 1] || lines[0];
+            
+            // 更新状态显示
+            updateDebugStatus();
+        }
+        
+        // 按钮点击事件处理
+        btnContinue.addEventListener('click', function() {
+            if (debugState === 'paused') {
+                debugState = 'running';
+                updateDebugStatus();
+                
+                // 模拟运行一段时间后暂停
+                setTimeout(() => {
+                    debugState = 'paused';
+                    // 随机跳到下一行
+                    const nextLine = currentLineNumber + Math.floor(Math.random() * 3) + 1;
+                    updateCurrentLine(nextLine > 25 ? 18 : nextLine);
+                }, 1500);
+            }
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
         });
         
-        // 设置图标交互
-        function setupIconInteractions() {
-            const iconItems = document.querySelectorAll('.icon-item');
-            const activeStatus = document.getElementById('active-status');
-            
-            iconItems.forEach(item => {
-                // 点击效果
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    // 添加点击动画
-                    this.classList.add('clicked');
-                    
-                    // 移除所有激活状态
-                    iconItems.forEach(icon => {
-                        icon.classList.remove('active');
-                    });
-                    
-                    // 设置当前项为激活状态
-                    this.classList.add('active');
-                    
-                    // 更新状态显示
-                    const iconText = this.querySelector('.icon-text').textContent;
-                    activeStatus.textContent = iconText;
-                    
-                    // 移除点击动画类
-                    setTimeout(() => {
-                        this.classList.remove('clicked');
-                    }, 400);
-                    
-                    // 在实际应用中，这里可以执行导航操作
-                    console.log(`导航到: ${iconText}`);
-                });
-                
-                // 键盘访问支持
-                item.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.click();
-                    }
-                });
-                
-                // 添加键盘可访问性
-                item.setAttribute('tabindex', '0');
-                item.setAttribute('role', 'button');
-                item.setAttribute('aria-label', `${item.querySelector('.icon-text').textContent} 图标，点击进行导航`);
-            });
-            
-            // 默认激活第一个图标
-            const defaultActive = document.getElementById('home');
-            if (defaultActive) {
-                activeStatus.textContent = defaultActive.querySelector('.icon-text').textContent;
+        btnStepOver.addEventListener('click', function() {
+            if (debugState === 'paused') {
+                const nextLine = currentLineNumber + 1;
+                updateCurrentLine(nextLine > 25 ? 18 : nextLine);
             }
-        }
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
+        });
+        
+        btnStepInto.addEventListener('click', function() {
+            if (debugState === 'paused') {
+                // 模拟进入函数
+                debugState = 'running';
+                updateDebugStatus();
+                
+                setTimeout(() => {
+                    debugState = 'paused';
+                    updateCurrentLine(10); // 进入calculate_sum函数
+                }, 800);
+            }
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
+        });
+        
+        btnStepOut.addEventListener('click', function() {
+            if (debugState === 'paused') {
+                // 模拟从函数返回
+                debugState = 'running';
+                updateDebugStatus();
+                
+                setTimeout(() => {
+                    debugState = 'paused';
+                    updateCurrentLine(19); // 返回到调用后的行
+                }, 800);
+            }
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
+        });
+        
+        btnRestart.addEventListener('click', function() {
+            debugState = 'running';
+            updateDebugStatus();
+            
+            setTimeout(() => {
+                debugState = 'paused';
+                updateCurrentLine(18); // 回到开始
+            }, 1000);
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
+        });
+        
+        btnStop.addEventListener('click', function() {
+            debugState = 'stopped';
+            updateDebugStatus();
+            
+            // 添加点击效果
+            this.classList.add('active');
+        });
+        
+        btnToggleBreakpoint.addEventListener('click', function() {
+            // 切换断点状态
+            const isActive = this.classList.contains('active');
+            
+            if (isActive) {
+                this.classList.remove('active');
+                this.innerHTML = '<i class="fas fa-circle"></i><span class="button-text">切换断点 (F9)</span>';
+                console.log(`在第${currentLineNumber}行移除断点`);
+            } else {
+                this.classList.add('active');
+                this.innerHTML = '<i class="fas fa-circle" style="color:#f14c4c"></i><span class="button-text">切换断点 (F9)</span>';
+                console.log(`在第${currentLineNumber}行设置断点`);
+            }
+            
+            // 添加点击效果
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
+        });
+        
+        btnViewBreakpoints.addEventListener('click', function() {
+            alert('当前断点:\n1. 第10行: calculate_sum函数内\n2. 第18行: main函数内\n3. 第25行: for循环内');
+            
+            // 添加点击效果
+            this.classList.add('active');
+            setTimeout(() => this.classList.remove('active'), 200);
+        });
+        
+        // 初始状态
+        updateDebugStatus();
+        
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(event) {
+            // F9 - 继续运行
+            if (event.key === 'F9' || (event.key === '9' && event.altKey)) {
+                event.preventDefault();
+                btnContinue.click();
+            }
+            
+            // F8 - 步过
+            if (event.key === 'F8' || (event.key === '8' && event.altKey)) {
+                event.preventDefault();
+                btnStepOver.click();
+            }
+            
+            // F7 - 步入
+            if (event.key === 'F7' || (event.key === '7' && event.altKey)) {
+                event.preventDefault();
+                btnStepInto.click();
+            }
+            
+            // Shift+F8 - 步出
+            if (event.key === 'F8' && event.shiftKey) {
+                event.preventDefault();
+                btnStepOut.click();
+            }
+            
+            // Shift+F5 - 停止
+            if (event.key === 'F5' && event.shiftKey) {
+                event.preventDefault();
+                btnStop.click();
+            }
+        });
+        
+        // 初始提示
+        console.log('调试工具栏已加载，可以使用以下快捷键：');
+        console.log('F9 - 继续运行');
+        console.log('F8 - 步过');
+        console.log('F7 - 步入');
+        console.log('Shift+F8 - 步出');
+        console.log('Shift+F5 - 停止调试');
     </script>
 </body>
 </html>

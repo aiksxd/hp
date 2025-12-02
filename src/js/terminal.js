@@ -1,0 +1,166 @@
+const { invoke } = window.__TAURI__.core;
+const { listen } = window.__TAURI__.event;
+
+class TerminalComponent {
+    constructor(containerId) {
+        this.terminal = new Terminal({
+            convertEol: true,
+            theme: {
+                background: '#282C33',
+                foreground: '#cccccc',
+                cursor: '#ffffff',
+                black: '#000000',
+                red: '#cd3131',
+                green: '#0dbc79',
+                yellow: '#e5e510',
+                blue: '#2472c8',
+                magenta: '#bc3fbc',
+                cyan: '#11a8cd',
+                white: '#e5e5e5'
+            }
+        });
+        
+        const container = document.getElementById(containerId);
+        this.terminal.open(container);
+        
+        this.isProcessRunning = false;
+        this.setupEventListeners();
+        this.setupKeyboardHandlers();
+    }
+    
+    async setupEventListeners() {
+        try {
+            const { listen } = window.__TAURI__.event;
+            
+            // 监听后端输出事件
+            this.unlistenOutput = await listen('command-output', (event) => {
+                const payload = event.payload;
+                this.terminal.write(payload.content);
+            });
+            
+            // 监听命令完成事件（如果需要）
+            this.unlistenCompleted = await listen('command-completed', () => {
+                this.terminal.write('\r\n命令执行完成\r\n');
+            });
+            
+        } catch (error) {
+            console.error('设置事件监听器失败:', error);
+            this.terminal.write('终端初始化失败，请刷新页面\r\n');
+        }
+        
+        // 终端输入处理
+        this.terminal.onData(data => {
+            console.log(data)
+            // this.sendInput(data);
+        });
+    }
+    
+    setupKeyboardHandlers() {
+        // 处理特殊按键
+        this.terminal.attachCustomKeyEventHandler((event) => {
+            // 处理 Ctrl+C
+            if (event.ctrlKey && event.code === 'KeyC' && event.type === 'keydown') {
+                this.sendInput('\x03'); // Ctrl+C 的转义序列
+                return false;
+            }
+            // 处理 Ctrl+D
+            if (event.ctrlKey && event.code === 'KeyD' && event.type === 'keydown') {
+                this.sendInput('\x04'); // Ctrl+D 的转义序列
+                return false;
+            }
+            // 处理 Ctrl+Z
+            if (event.ctrlKey && event.code === 'KeyZ' && event.type === 'keydown') {
+                this.sendInput('\x1a'); // Ctrl+Z 的转义序列
+                return false;
+            }
+            return true;
+        });
+    }
+    
+    async executeCommand(cmd, args = []) {
+        try {
+            // 清除终端
+            this.terminal.clear();
+            this.terminal.write(`$ ${cmd} ${args.join(' ')}\r\n`);
+            
+            // 执行命令
+            await invoke('execute_command_realtime', { 
+                cmd, 
+                args 
+            });
+
+            this.isProcessRunning = true;
+
+        } catch (error) {
+            this.terminal.write(`\r\n错误: ${error}\r\n`);
+        }
+    }
+    
+    async sendInput(data) {
+        // 检查进程是否在运行
+        if (!this.isProcessRunning) {
+            // 如果没有运行中的进程，直接显示输入
+            this.terminal.write(data);
+            return;
+        }
+
+        try {
+            // 发送用户输入到子进程
+            await invoke('send_terminal_input', { input: data });
+        } catch (error) {
+            if (error.includes('进程已结束') || error.includes('管道被关闭')) {
+                this.isProcessRunning = false;
+                this.terminal.write('\r\n进程已结束\r\n');
+            } else {
+                console.error('发送输入失败:', error);
+            }
+        }
+    }
+    
+    async killProcess() {
+        try {
+            await invoke('kill_current_process');
+            this.isProcessRunning = false;
+            this.terminal.write('\r\n进程已终止\r\n');
+        } catch (error) {
+            console.error('终止进程失败:', error);
+        }
+    }
+    
+    // 清理函数
+    destroy() {
+        if (this.unlistenOutput) {
+            this.unlistenOutput();
+        }
+        if (this.unlistenCompleted) {
+            this.unlistenCompleted();
+        }
+        this.terminal.dispose();
+    }
+}
+
+// 全局变量以便其他脚本可以访问
+window.terminal = new TerminalComponent('terminal');
+
+// 测试函数 - 可以在控制台调用
+window.runCommand = function(cmd, args = []) {
+    window.terminal.executeCommand(cmd, args);
+};
+
+// 终止当前进程的函数
+window.killProcess = function() {
+    window.terminal.killProcess();
+};
+
+// 运行交互式 shell 的命令
+window.startShell = function() {
+    const isWindows = navigator.platform.toLowerCase().includes('win');
+    if (isWindows) {
+        window.terminal.executeCommand('cmd', []);
+    } else {
+        window.terminal.executeCommand('bash', []);
+    }
+};
+
+// 默认启动一个交互式 shell
+window.startShell();

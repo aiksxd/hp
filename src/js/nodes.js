@@ -1,9 +1,8 @@
-// workflow.js
 function initializeDefaultNodes() {
-
     // -------------------- Compute Nodes ----------------------
-    class jsNode {
+    class jsNode extends runtimeNode {
         constructor() {
+            super();
             this.title = "JavaScript";
             this.addInput("input", "number");
             this.addOutput("output", "number");
@@ -13,58 +12,28 @@ function initializeDefaultNodes() {
                 codeType: 'javascript'
             };
         }
-        onExecute() {
-            const f = new Function(this.properties.fn);
-            f();
-        }
-        onSelected() {
-            console.log("当前选中节点id:", this.id);
-
-            const event = new CustomEvent('nodeSelected', {
-                detail: this
-            });
-            document.dispatchEvent(event);
-        }
     }
     // -------------------- Pre-prepared Nodes ----------------------
-    class startNode {
+    class startNode extends runtimeNode {
         constructor() {
-            this.title = "Rand Debug(JS)(Loop)";
-            this.addOutput("Number", "number");
-            this.addOutput("String", "string");
-            this.serialize_widgets = true;
+            super();
+            this.title = "Rand Debug(Loop)";
+            this.addOutput("number", "number");
+            this.addOutput("string", "string");
             this.properties = {
                 description: "javascript node",
                 fn: "",
                 codeType: 'javascript',
             };
-            // this.addWidget("number", "Number",
-            //     current_value, callback,
-            //     { min: 0, max: 100, step: 1 }
-            // );
-            this.addWidget("text", "name", "");
-            // this.addWidget("combo", "Combo",
-            //     value1, callback,
-            //     { values: { "title1":value1, "title2":value2 } }
-            // );
-
-        }
-        onExecute() {
-            const f = new Function(this.properties.fn);
-            f();
-        }
-        onSelected() {
-            console.log("当前选中节点id:", this.id);
-
-            const event = new CustomEvent('nodeSelected', {
-                detail: this
+            this.addWidget("button", "run", null, () => {
+                this.onExecute();
             });
-            document.dispatchEvent(event);
         }
     }
 
-    LiteGraph.registerNodeType("code/JavaScript)", jsNode);
+    LiteGraph.registerNodeType("code/JavaScript", jsNode);
     LiteGraph.registerNodeType("debug/Rand(Loop)", startNode);
+    LiteGraph.registerNodeType("shell/Terminal", shellNode);
 
     // 注册其他节点类型
     function sum(a,b) {

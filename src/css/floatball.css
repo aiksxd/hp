@@ -9,6 +9,7 @@
     transform: rotate(-10deg) translate(-10px, -13px);
     transition: all 0.6s;
     scale: 0.7;
+    user-select: none;
 }
 .saturn-menu-container:hover {
     transform: rotate(0deg) translate(-10px, -13px);
@@ -33,7 +34,7 @@
     justify-content: center;
     align-items: center;
     color: white;
-    animation: float 6s ease-in-out infinite;
+    /* animation: float 6s ease-in-out infinite; */
 }
 .saturn-menu-container:hover .glow {
     opacity: 0;
@@ -45,13 +46,10 @@
     width: 60px; /* 大于土星 */
     height: 20px; /* 高度稍大 */
     border-radius: 50%;
-    box-shadow: 
-        0 0 15px rgba(100, 150, 255, 0.4),
-        0 0 10px rgba(150, 200, 255, 0.3);
     border: 3px solid rgba(200, 220, 255, 0.9); /* 更亮的颜色 */
     transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1.5);
-    animation: float 6s ease-in-out infinite;
     filter: blur(0.5px); /* 轻微模糊效果增强层次感 */
+    /* animation: float 6s ease-in-out infinite; */
 }
 /* 土星环 - 下半环 */
 .saturn-ring-lower {
@@ -78,7 +76,7 @@
     height: 40px;
     border-radius: 40px;
     background: radial-gradient(circle at 30% 30%, #4a4a8a, #2a2a5a);
-    animation: none;
+    /* animation: none; */
     gap: 10px;
 }
 /* 悬停时土星环消失效果 */
@@ -88,8 +86,7 @@
     height: 0;
     opacity: 0;
     border-width: 0;
-    transform: translateY(0);
-    animation: none;
+    /* animation: none; */
 }
 
 .saturn-menu-container:hover .icon-item {

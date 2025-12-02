@@ -51,18 +51,14 @@ function triggerAction(actionId) {
     if (action) {
         // 可以在这里添加实际的功能代码
         switch(actionId) {
-            case 'open-project':
-                break;
-            case 'new-project':
-                break;
-            case 'save-project':;
-                break;
             case 'export':
-                break;
+                exportGraph();
+            break;
             case 'import':
-                break;
+                importGraph(jsonData)
+            break;
             case 'settings':
-                break;
+            break;
         }
     }
 }

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas中渲染Markdown文本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .panel h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f1f1;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: auto;
+            background-color: white;
+            min-height: 300px;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .clear-btn {
+            background-color: #e74c3c;
+        }
+        
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .export-btn {
+            background-color: #2ecc71;
+        }
+        
+        .export-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .instructions {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Canvas中渲染Markdown文本</h1>
+            <p class="subtitle">将Markdown语法文本渲染到Canvas画布上</p>
+        </header>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>Markdown输入</h2>
+                <textarea id="markdownInput" placeholder="在此输入Markdown文本...">
+                    # Canvas中渲染Markdown
+                    这是一个在Canvas中渲染Markdown文本的示例。
+
+                    ## 功能特性
+
+                    - 支持**粗体**和*斜体*文本
+                    - 支持不同级别的标题
+                    - 支持列表项
+                    - 支持代码块
+                    - 支持引用块
+
+                    ## 代码示例
+
+                    ```javascript
+                    // 这是一个代码示例
+                    function renderMarkdownToCanvas(markdown, canvas) {
+                        // 渲染逻辑
+                        console.log("渲染Markdown到Canvas");
+                    }
+                    引用示例
+                    这是引用的文本内容
+                    可以在Canvas中正常显示
+
+                    其他格式
+                    你还可以使用~~删除线~~和行内代码等格式。
+            </textarea>
+            <div class="controls">
+                <button id="renderBtn">渲染到Canvas</button>
+                <button id="clearBtn" class="clear-btn">清空Canvas</button>
+                <button id="exportBtn" class="export-btn">导出为图片</button>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>Canvas输出</h2>
+            <div class="canvas-container">
+                <canvas id="markdownCanvas" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <label for="canvasScale">缩放比例：</label>
+                <input type="range" id="canvasScale" min="0.5" max="2" step="0.1" value="1">
+                <span id="scaleValue">1.0x</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>支持的Markdown语法</h3>
+        <ul>
+            <li><strong>标题</strong>: # H1, ## H2, ### H3</li>
+            <li><strong>强调</strong>: **粗体**, *斜体*, ~~删除线~~</li>
+            <li><strong>列表</strong>: - 项目1, - 项目2</li>
+            <li><strong>代码块</strong>: 使用三个反引号 ```</li>
+            <li><strong>引用</strong>: &gt; 引用文本</li>
+            <li><strong>行内代码</strong>: `代码`</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // 获取DOM元素
+    const markdownInput = document.getElementById('markdownInput');
+    const canvas = document.getElementById('markdownCanvas');
+    const ctx = canvas.getContext('2d');
+    const renderBtn = document.getElementById('renderBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const canvasScale = document.getElementById('canvasScale');
+    const scaleValue = document.getElementById('scaleValue');
+    
+    // 初始缩放
+    let currentScale = 1;
+    
+    // Markdown渲染器类
+    class MarkdownCanvasRenderer {
+        constructor(ctx, width, height) {
+            this.ctx = ctx;
+            this.width = width;
+            this.height = height;
+            this.x = 20;
+            this.y = 30;
+            this.lineHeight = 24;
+            this.indentSize = 20;
+            this.codeBgColor = '#f5f5f5';
+            this.quoteBgColor = '#f9f9f9';
+            
+            // 字体设置
+            this.fonts = {
+                h1: 'bold 28px Arial',
+                h2: 'bold 24px Arial',
+                h3: 'bold 20px Arial',
+                normal: '16px Arial',
+                code: '14px "Courier New", monospace'
+            };
+        }
+        
+        // 解析并渲染Markdown
+        render(markdown) {
+            // 清空Canvas
+            this.clearCanvas();
+            
+            // 重置绘制位置
+            this.x = 20;
+            this.y = 30;
+            
+            // 按行分割Markdown
+            const lines = markdown.split('\n');
+            
+            // 逐行解析和渲染
+            for (let i = 0; i < lines.length; i++) {
+                this.renderLine(lines[i]);
+            }
+        }
+        
+        // 渲染单行
+        renderLine(line) {
+            // 跳过空行
+            if (line.trim() === '') {
+                this.y += this.lineHeight / 2;
+                return;
+            }
+            
+            // 检查标题
+            if (line.startsWith('# ')) {
+                this.renderHeading(line.substring(2), 1);
+                return;
+            } else if (line.startsWith('## ')) {
+                this.renderHeading(line.substring(3), 2);
+                return;
+            } else if (line.startsWith('### ')) {
+                this.renderHeading(line.substring(4), 3);
+                return;
+            }
+            
+            // 检查代码块开始/结束
+            if (line.trim().startsWith('```')) {
+                // 这里简化处理，实际应该处理多行代码块
+                this.y += this.lineHeight;
+                return;
+            }
+            
+            // 检查引用
+            if (line.trim().startsWith('> ')) {
+                this.renderQuote(line.substring(2));
+                return;
+            }
+            
+            // 检查列表项
+            if (line.trim().startsWith('- ')) {
+                this.renderListItem(line.substring(2));
+                return;
+            }
+            
+            // 普通段落
+            this.renderParagraph(line);
+        }
+        
+        // 渲染标题
+        renderHeading(text, level) {
+            // 设置字体
+            this.ctx.font = this.fonts[`h${level}`];
+            this.ctx.fillStyle = '#2c3e50';
+            
+            // 绘制标题
+            this.ctx.fillText(text, this.x, this.y);
+            
+            // 更新位置
+            this.y += this.lineHeight * 1.5;
+            
+            // 重置字体
+            this.ctx.font = this.fonts.normal;
+        }
+        
+        // 渲染段落
+        renderParagraph(text) {
+            // 设置字体
+            this.ctx.font = this.fonts.normal;
+            this.ctx.fillStyle = '#333';
+            
+            // 处理内联格式
+            const parts = this.parseInlineFormats(text);
+            
+            // 绘制文本
+            let currentX = this.x;
+            for (const part of parts) {
+                // 设置字体样式
+                this.ctx.font = part.font || this.fonts.normal;
+                this.ctx.fillStyle = part.color || '#333';
+                
+                // 绘制文本部分
+                this.ctx.fillText(part.text, currentX, this.y);
+                
+                // 更新X位置
+                currentX += this.ctx.measureText(part.text).width;
+            }
+            
+            // 更新Y位置
+            this.y += this.lineHeight;
+        }
+        
+        // 解析内联格式（粗体、斜体、代码等）
+        parseInlineFormats(text) {
+            const parts = [];
+            let remainingText = text;
+            
+            // 正则表达式匹配各种内联格式
+            const patterns = [
+                { regex: /\*\*(.*?)\*\*/g, font: 'bold 16px Arial' }, // 粗体
+                { regex: /\*(.*?)\*/g, font: 'italic 16px Arial' },    // 斜体
+                { regex: /~~(.*?)~~/g, color: '#999', textDecoration: 'line-through' }, // 删除线
+                { regex: /`(.*?)`/g, font: this.fonts.code, bgColor: '#f5f5f5' } // 行内代码
+            ];
+            
+            // 查找所有匹配项
+            const matches = [];
+            for (const pattern of patterns) {
+                let match;
+                while ((match = pattern.regex.exec(text)) !== null) {
+                    matches.push({
+                        start: match.index,
+                        end: pattern.regex.lastIndex - 1,
+                        text: match[1],
+                        font: pattern.font,
+                        color: pattern.color,
+                        bgColor: pattern.bgColor,
+                        textDecoration: pattern.textDecoration
+                    });
+                }
+                // 重置正则表达式状态
+                pattern.regex.lastIndex = 0;
+            }
+            
+            // 按起始位置排序
+            matches.sort((a, b) => a.start - b.start);
+            
+            // 如果没有匹配项，返回整个文本
+            if (matches.length === 0) {
+                return [{ text, font: this.fonts.normal, color: '#333' }];
+            }
+            
+            // 构建部分列表
+            let lastIndex = 0;
+            for (const match of matches) {
+                // 添加匹配前的普通文本
+                if (match.start > lastIndex) {
+                    parts.push({
+                        text: text.substring(lastIndex, match.start),
+                        font: this.fonts.normal,
+                        color: '#333'
+                    });
+                }
+                
+                // 添加格式化的文本
+                parts.push({
+                    text: match.text,
+                    font: match.font || this.fonts.normal,
+                    color: match.color || '#333',
+                    bgColor: match.bgColor,
+                    textDecoration: match.textDecoration
+                });
+                
+                lastIndex = match.end + 1;
+            }
+            
+            // 添加剩余文本
+            if (lastIndex < text.length) {
+                parts.push({
+                    text: text.substring(lastIndex),
+                    font: this.fonts.normal,
+                    color: '#333'
+                });
+            }
+            
+            return parts;
+        }
+        
+        // 渲染列表项
+        renderListItem(text) {
+            // 绘制项目符号
+            this.ctx.font = this.fonts.normal;
+            this.ctx.fillStyle = '#333';
+            this.ctx.fillText('•', this.x, this.y);
+            
+            // 绘制列表项文本
+            const bulletWidth = this.ctx.measureText('•').width;
+            this.ctx.fillText(text, this.x + bulletWidth + 10, this.y);
+            
+            // 更新位置
+            this.y += this.lineHeight;
+        }
+        
+        // 渲染引用
+        renderQuote(text) {
+            // 绘制引用背景
+            this.ctx.fillStyle = this.quoteBgColor;
+            this.ctx.fillRect(this.x - 10, this.y - 18, this.width - 40, this.lineHeight + 4);
+            
+            // 绘制左边框
+            this.ctx.fillStyle = '#3498db';
+            this.ctx.fillRect(this.x - 10, this.y - 18, 4, this.lineHeight + 4);
+            
+            // 绘制引用文本
+            this.ctx.font = this.fonts.normal;
+            this.ctx.fillStyle = '#555';
+            this.ctx.fillText(text, this.x + 5, this.y);
+            
+            // 更新位置
+            this.y += this.lineHeight;
+        }
+        
+        // 清空Canvas
+        clearCanvas() {
+            this.ctx.clearRect(0, 0, this.width, this.height);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+        }
+    }
+    
+    // 创建渲染器实例
+    const renderer = new MarkdownCanvasRenderer(ctx, canvas.width, canvas.height);
+    
+    // 初始渲染
+    renderer.render(markdownInput.value);
+    
+    // 渲染按钮点击事件
+    renderBtn.addEventListener('click', () => {
+        renderer.render(markdownInput.value);
+    });
+    
+    // 清空按钮点击事件
+    clearBtn.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+    
+    // 导出按钮点击事件
+    exportBtn.addEventListener('click', () => {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'markdown-canvas.png';
+        link.href = dataUrl;
+        link.click();
+    });
+    
+    // 缩放滑块事件
+    canvasScale.addEventListener('input', () => {
+        currentScale = parseFloat(canvasScale.value);
+        scaleValue.textContent = `${currentScale.toFixed(1)}x`;
+        
+        // 保存当前Canvas状态
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        tempCtx.drawImage(canvas, 0, 0);
+        
+        // 清除主Canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 应用缩放
+        ctx.save();
+        ctx.scale(currentScale, currentScale);
+        ctx.drawImage(tempCanvas, 0, 0);
+        ctx.restore();
+    });
+    
+    // 添加键盘快捷键
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Enter 渲染
+        if (e.ctrlKey && e.key === 'Enter') {
+            renderer.render(markdownInput.value);
+            e.preventDefault();
+        }
+        
+        // Ctrl+S 保存
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'markdown-canvas.png';
+            link.href = dataUrl;
+            link.click();
+        }
+    });
+</script>
+</body> </html>

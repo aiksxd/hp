@@ -1,0 +1,178 @@
+/* 悬浮调试菜单样式 */
+.debug-toolbar {
+    top: -20px;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(37, 37, 38, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 2px 12px;
+    display: flex;
+    align-items: center;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 101;
+    transition: all 0.5s ease;
+    border: 1px solid #3e3e42;
+    opacity: 0.3;
+}
+
+.debug-toolbar:hover {
+    top: 2px;
+    box-shadow: 
+        0 6px 25px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    opacity: 1;
+}
+
+.debug-button {
+    background: transparent;
+    border: none;
+    fill: #cccccc;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 4px;
+    position: relative;
+}
+
+.debug-button:hover {
+    background: rgba(90, 93, 94, 0.5);
+    fill: #ffffff;
+}
+
+.debug-button:active {
+    transform: scale(0.95);
+    background: rgba(90, 93, 94, 0.7);
+}
+
+.debug-button.active {
+    background: rgba(0, 122, 204, 0.2);
+    fill: #007acc;
+}
+
+.debug-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.debug-button.disabled:hover {
+    background: transparent;
+    fill: #cccccc;
+}
+
+.button-text {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    fill: #ffffff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.debug-button:hover .button-text {
+    opacity: 1;
+}
+
+.separator {
+    width: 1px;
+    height: 24px;
+    background: #3e3e42;
+    margin: 0 8px;
+}
+
+.debug-status {
+    margin-left: 12px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    fill: #cccccc;
+    min-width: 120px;
+    text-align: center;
+}
+
+.status-indicator {
+    width: 100px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    margin-right: 10px;
+}
+
+.status-running {
+    background: rgba(46, 125, 50, 0.2);
+    fill: #6bbf7a;
+}
+
+.status-paused {
+    background: rgba(251, 192, 45, 0.2);
+    fill: #fbc02d;
+}
+
+.status-stopped {
+    background: rgba(211, 47, 47, 0.2);
+    fill: #ef5350;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+        
+.status-running .status-dot {
+    background: #6bbf7a;
+    animation: pulse 1.5s infinite;
+}
+
+.status-paused .status-dot {
+    background: #fbc02d;
+}
+
+.status-stopped .status-dot {
+    background: #ef5350;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+
+        
+@media (max-width: 768px) {
+    .debug-toolbar {
+        padding: 2px 12px;
+    }
+
+    .debug-button {
+        width: 36px;
+        height: 36px;
+        margin: 0 2px;
+    }
+
+    .debug-status {
+        display: none;
+    }
+}
