@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小土星悬浮菜单球</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a40 100%);
+            color: #e0e0ff;
+            overflow: hidden;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+            padding: 30px;
+            background: rgba(10, 10, 40, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(100, 100, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            color: #aaccff;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            margin-bottom: 30px;
+            color: #8899cc;
+            font-size: 1.1rem;
+        }
+        
+        /* 星空背景 */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* 土星菜单球容器 */
+        .saturn-menu-container {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            z-index: 1000;
+            width: 100px;
+            height: 100px;
+        }
+        
+        /* 土星球体 */
+        .saturn-ball {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4a4a8a, #2a2a5a);
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 
+                0 0 20px rgba(100, 100, 255, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        /* 土星环 */
+        .saturn-ring {
+            position: absolute;
+            width: 120px;
+            height: 30px;
+            border-radius: 50%;
+            border: 4px solid rgba(150, 200, 255, 0.6);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 15px rgba(100, 150, 255, 0.4);
+        }
+        
+        /* 初始旋转动画 */
+        .saturn-ball {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .saturn-ring {
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes rotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        /* 悬停时土星变为矩形 */
+        .saturn-menu-container:hover .saturn-ball {
+            width: 180px;
+            height: 80px;
+            border-radius: 40px;
+            background: radial-gradient(circle at 30% 30%, #4a4a8a, #2a2a5a);
+            animation: none;
+            transform: translateY(0);
+        }
+        
+        .saturn-menu-container:hover .saturn-ring {
+            width: 0;
+            height: 0;
+            opacity: 0;
+            border-width: 0;
+        }
+        
+        /* 菜单展开 */
+        .menu-items {
+            position: absolute;
+            top: 90px;
+            left: 0;
+            width: 180px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 8;
+        }
+        
+        .saturn-menu-container:hover .menu-items {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+            transition-delay: 0.3s;
+        }
+        
+        .menu-item {
+            background: rgba(30, 30, 70, 0.9);
+            margin: 8px 0;
+            padding: 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: #ccddff;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(100, 100, 255, 0.2);
+        }
+        
+        .menu-item:hover {
+            background: rgba(50, 50, 120, 0.9);
+            transform: translateX(-5px);
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .menu-item:active {
+            transform: scale(0.98);
+        }
+        
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 16px;
+            color: #88aaff;
+        }
+        
+        .menu-item:hover i {
+            color: #aaccff;
+            transform: scale(1.2);
+            transition: transform 0.3s ease;
+        }
+        
+        /* 土星图标 */
+        .saturn-icon {
+            font-size: 24px;
+            color: #aaccff;
+            transition: all 0.6s ease;
+        }
+        
+        .saturn-menu-container:hover .saturn-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            top: 15px;
+            right: 15px;
+            box-shadow: 0 0 10px #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        /* 说明区域 */
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(20, 20, 60, 0.5);
+            border-radius: 15px;
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        .instructions h3 {
+            color: #88aaff;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            color: #ccddff;
+        }
+        
+        .feature {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .feature-item {
+            flex: 1;
+            min-width: 200px;
+            margin: 10px;
+            padding: 15px;
+            background: rgba(30, 30, 80, 0.6);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .feature-item i {
+            font-size: 24px;
+            color: #88aaff;
+            margin-bottom: 10px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .saturn-menu-container {
+                top: 30px;
+                right: 30px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+        
+        /* 菜单项点击效果 */
+        .menu-item.clicked {
+            animation: clickEffect 0.3s ease;
+        }
+        
+        @keyframes clickEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 光效 */
+        .glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: radial-gradient(circle at center, rgba(150, 200, 255, 0.2), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .saturn-ball:hover .glow {
+            opacity: 1;
+        }
+        
+        /* 菜单展开动画 */
+        .menu-item:nth-child(1) { transition-delay: 0.1s; }
+        .menu-item:nth-child(2) { transition-delay: 0.15s; }
+        .menu-item:nth-child(3) { transition-delay: 0.2s; }
+        .menu-item:nth-child(4) { transition-delay: 0.25s; }
+        .menu-item:nth-child(5) { transition-delay: 0.3s; }
+        .menu-item:nth-child(6) { transition-delay: 0.35s; }
+    </style>
+</head>
+<body>
+    <!-- 星空背景 -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- 小土星悬浮菜单球 -->
+    <div class="saturn-menu-container">
+        <div class="saturn-ring"></div>
+        <div class="saturn-ball">
+            <div class="saturn-icon">
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="status-indicator"></div>
+            <div class="glow"></div>
+        </div>
+        
+        <div class="menu-items">
+            <div class="menu-item" id="open-project">
+                <i class="fas fa-folder-open"></i>
+                <span>打开项目</span>
+            </div>
+            <div class="menu-item" id="new-project">
+                <i class="fas fa-plus-circle"></i>
+                <span>新建项目</span>
+            </div>
+            <div class="menu-item" id="save-project">
+                <i class="fas fa-save"></i>
+                <span>保存项目</span>
+            </div>
+            <div class="menu-item" id="export">
+                <i class="fas fa-file-export"></i>
+                <span>导出项目</span>
+            </div>
+            <div class="menu-item" id="import">
+                <i class="fas fa-file-import"></i>
+                <span>导入项目</span>
+            </div>
+            <div class="menu-item" id="settings">
+                <i class="fas fa-cog"></i>
+                <span>设置</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div class="container">
+        <h1>小土星悬浮菜单球</h1>
+        <div class="subtitle">悬停土星查看炫酷的变形动画和菜单展开效果</div>
+        
+        <div class="instructions">
+            <h3>设计特点：</h3>
+            <ul>
+                <li><strong>初始状态</strong>：小土星形状（圆形+旋转环），带有浮动动画</li>
+                <li><strong>悬停触发</strong>：土星球体加速旋转并逐渐变为矩形</li>
+                <li><strong>菜单展开</strong>：矩形向下延伸，菜单项以渐进动画出现</li>
+                <li><strong>交互反馈</strong>：菜单项悬停有光效和位移，点击有缩放反馈</li>
+                <li><strong>视觉设计</strong>：宇宙星空主题，渐变色彩和柔和光效</li>
+                <li><strong>功能齐全</strong>：包含常用项目操作功能</li>
+            </ul>
+            
+            <div class="feature">
+                <div class="feature-item">
+                    <i class="fas fa-magic"></i>
+                    <h4>智能变形</h4>
+                    <p>土星到矩形的平滑变形动画</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-rocket"></i>
+                    <h4>快速访问</h4>
+                    <p>一键访问常用项目功能</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-palette"></i>
+                    <h4>视觉吸引</h4>
+                    <p>宇宙主题设计与流畅动画</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 创建星空背景
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starsCount = 150;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                // 随机大小
+                const size = Math.random() * 3;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // 随机位置
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                
+                // 随机闪烁延迟
+                star.style.animationDelay = `${Math.random() * 3}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            setupMenuInteractions();
+            
+            // 初始状态提示
+            setTimeout(() => {
+                showHint();
+            }, 1000);
+        });
+        
+        // 设置菜单交互
+        function setupMenuInteractions() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                // 点击效果
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // 添加点击动画
+                    this.classList.add('clicked');
+                    
+                    // 模拟功能执行
+                    const itemId = this.id;
+                    simulateAction(itemId);
+                    
+                    // 移除点击动画类
+                    setTimeout(() => {
+                        this.classList.remove('clicked');
+                    }, 300);
+                });
+            });
+            
+            // 点击土星球体也可以触发悬停效果
+            const saturnBall = document.querySelector('.saturn-ball');
+            saturnBall.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // 如果菜单未展开，可以添加额外效果
+                if (!document.querySelector('.saturn-menu-container:hover')) {
+                    // 添加点击效果
+                    this.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                }
+            });
+            
+            // 点击页面其他地方关闭菜单（移动设备）
+            document.addEventListener('click', function() {
+                // 移动设备上可能需要手动关闭菜单
+                if (window.innerWidth <= 768) {
+                    // 这里可以添加关闭菜单的逻辑
+                }
+            });
+        }
+        
+        // 模拟菜单功能执行
+        function simulateAction(actionId) {
+            const actions = {
+                'open-project': { name: '打开项目', icon: '📁' },
+                'new-project': { name: '新建项目', icon: '🆕' },
+                'save-project': { name: '保存项目', icon: '💾' },
+                'export': { name: '导出项目', icon: '📤' },
+                'import': { name: '导入项目', icon: '📥' },
+                'settings': { name: '设置', icon: '⚙️' }
+            };
+            
+            const action = actions[actionId];
+            if (action) {
+                // 在实际应用中，这里会执行相应的功能
+                // 这里我们只显示一个简单的提示
+                console.log(`执行: ${action.name} ${action.icon}`);
+                
+                // 可以在这里添加实际的功能代码
+                switch(actionId) {
+                    case 'open-project':
+                        // 打开项目对话框
+                        alert('打开项目功能');
+                        break;
+                    case 'new-project':
+                        // 新建项目
+                        alert('新建项目功能');
+                        break;
+                    case 'save-project':
+                        // 保存项目
+                        alert('保存项目功能');
+                        break;
+                    case 'export':
+                        // 导出项目
+                        alert('导出项目功能');
+                        break;
+                    case 'import':
+                        // 导入项目
+                        alert('导入项目功能');
+                        break;
+                    case 'settings':
+                        // 打开设置
+                        alert('打开设置功能');
+                        break;
+                }
+            }
+        }
+        
+        // 显示使用提示
+        function showHint() {
+            // 只在首次加载时显示提示
+            if (!sessionStorage.getItem('hintShown')) {
+                const hint = document.createElement('div');
+                hint.style.cssText = `
+                    position: fixed;
+                    top: 160px;
+                    right: 120px;
+                    background: rgba(30, 30, 80, 0.9);
+                    color: #aaccff;
+                    padding: 10px 15px;
+                    border-radius: 15px;
+                    border: 1px solid rgba(100, 150, 255, 0.5);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                    font-size: 14px;
+                    z-index: 1001;
+                    max-width: 200px;
+                    animation: fadeInOut 5s forwards;
+                `;
+                
+                // 创建CSS动画
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fadeInOut {
+                        0% { opacity: 0; transform: translateY(10px); }
+                        20% { opacity: 1; transform: translateY(0); }
+                        80% { opacity: 1; transform: translateY(0); }
+                        100% { opacity: 0; transform: translateY(-10px); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                hint.innerHTML = '✨ 悬停到土星上查看菜单效果 ✨';
+                document.body.appendChild(hint);
+                
+                // 5秒后移除提示
+                setTimeout(() => {
+                    document.body.removeChild(hint);
+                }, 5000);
+                
+                sessionStorage.setItem('hintShown', 'true');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -74,3 +74,26 @@
     height: -webkit-fill-available;
     width: -webkit-fill-available;
 }
+
+.hint {
+    position: fixed;
+    top: 160px;
+    right: 120px;
+    background: rgba(30, 30, 80, 0.9);
+    color: #aaccff;
+    padding: 10px 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(100, 150, 255, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    z-index: 1001;
+    max-width: 200px;
+    animation: fadeInOut 5s forwards;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(10px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}

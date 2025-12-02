@@ -55,10 +55,12 @@ require(['vs/editor/editor.main'], function () {
                 return
             }
             // prevent changing node(too...) leading to call handle()
-            if (editorCommManager.lastNodeId === editorCommManager.currentNodeId) {
-                editorCommManager.nodeModified = true;
-                handleChange();
+            if (editorCommManager.isChangingNode) {
+                editorCommManager.isChangingNode = false;
+                return;
             }
+            editorCommManager.isNodeModified = true;
+            handleChange();
         });
         editorArray.push(editor);
         return editor;
@@ -90,21 +92,21 @@ require(['vs/editor/editor.main'], function () {
 // 编辑器通信管理器
 class EditorCommunicationManager {
     constructor() {
-        this.isUpdating = false;
         this.currentNodeId = null;
-        this.lastNodeId = null;
         this.lastEditContent = null;
-        this.nodeModified = false;
+        this.isUpdating = false;
+        this.isChangingNode = false;
+        this.isNodeModified = false;
         this.setupEventListeners();
     }
     // ----------------------- Editor Recive -----------------
     setupEventListeners() {
         // 监听节点选中事件
         document.addEventListener('nodeSelected', (event) => {
-            this.currentNodeId = event.detail.id;
             // prevent click same node leading to handle
-            if (this.lastNodeId !== this.currentNodeId) {
-                this.lastNodeId = this.currentNodeId;
+            if (event.detail.id !== this.currentNodeId) {
+                this.isChangingNode = true;
+                this.currentNodeId = event.detail.id;
                 this.handleNewDataComing(event.detail);
             }
         });
@@ -117,7 +119,7 @@ class EditorCommunicationManager {
         let contentType = 'node-config';
         // provide new data and mark it false for preventing saving data 
         // when change editor content without modification
-        this.nodeModified = false;
+        this.isNodeModified = false;
         // 格式化显示数据
         switch (window.editContentType) {
             case 'node':
@@ -131,11 +133,20 @@ class EditorCommunicationManager {
                 if (nodeData.properties.fn) {
                     data = nodeData.properties.fn;
                 } else {
+                    let inputsCode = '';
+                    let outputsCode = ['', ''];
+                    if (nodeData.inputs) {
+                        inputsCode = nodeData.inputs.map((input, i) => `let ${input.name} = this.getInputData(${i});`).join('\n');
+                    }
+                    if (nodeData.outputs) {
+                        outputsCode[0] = ( nodeData.outputs.map(output => `let ${output.name} = undefined;`).join('\n') );
+                        outputsCode[1] = ( nodeData.outputs.map((output, i) => `this.setOutputData(${i}) = ${output.name};`).join('\n') );
+                    }
                     data = [
-                        `${nodeData.inputs.map((input, i) => `let ${input.name} = this.getInputData(${i});`).join('\n')}`,
-                        `${nodeData.outputs.map(output => `let ${output.name} = undefined;`).join('\n')}`,
+                        `${inputsCode}`,
+                        `${outputsCode[0]}`,
                         `// write your code here`,
-                        `${nodeData.outputs.map((output, i) => `this.setOutputData(${i}) = ${output.name};`).join('\n')}`
+                        `${outputsCode[1]}`
                     ].join('\n');
                 }
                 contentType = nodeData.properties.codeType;

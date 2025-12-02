@@ -1,39 +1,30 @@
-// workflow.js
-function initializeLiteGraph() {
-
-    // 自定义节点类型
-    function jsNode() {
-        this.addInput("input", "number");
-        this.addOutput("output", "number");
-        this.properties = {
-            description: "javascript node",
-            fn: "",
-            codeType: 'javascript'
-        };
-    }
-
-    jsNode.title = "JavaScript";
+// 导出图数据为JSON字符串
+function exportGraph() {
+    const graphData = window.graph.serialize();
     
-    jsNode.prototype.onExecute = function() {
-        const f = new Function(this.properties.fn);
-        f();
+    // 转换为格式化JSON
+    return JSON.stringify(graphData, null, 2);
+}
+
+// 从JSON字符串导入图数据
+function importGraph(jsonData) {
+    if (!jsonData || typeof jsonData !== 'string') {
+        throw new Error('需要有效的JSON字符串');
     }
     
-    jsNode.prototype.onSelected = function() {
-        console.log("节点被选中:", this.id);
+    try {
+        // 解析JSON数据
+        const graphData = JSON.parse(jsonData);
         
-        const event = new CustomEvent('nodeSelected', { 
-            detail: this
-        });
-        document.dispatchEvent(event);
+        // 清空现有图
+        window.graph.clear();
+        
+        // 核心：配置图数据
+        window.graph.configure(graphData);
+        
+        return true;
+    } catch (error) {
+        console.error('导入失败:', error);
+        throw new Error(`导入失败: ${error.message}`);
     }
-
-    LiteGraph.registerNodeType("javascript", jsNode);
-
-    // 注册其他节点类型
-    function sum(a,b) {
-        return a+b;
-    }
-
-    LiteGraph.wrapFunctionAsNode("math/sum", sum, ["Number","Number"],"Number");
 }

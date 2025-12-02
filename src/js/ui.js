@@ -12,13 +12,32 @@ function popupMsg(message) {
     }, 3000);
 }
 
+// 显示使用提示
+function showHint(text) {
+    // 只在首次加载时显示提示
+    // if (!sessionStorage.getItem('hintShown')) {
+    //     sessionStorage.setItem('hintShown', 'true');
+    // }
+    const hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.innerHTML = `✨ ${text} ✨`;
+    document.body.appendChild(hint);
+    
+    setTimeout(() => {
+        document.body.className.remove('hint');
+        setTimeout(() => {
+            document.body.removeChild(hint);
+        }, 1000);
+    }, 2000);
+        
+}
 function switchSection(sectionType) {
     if (window.editContentType === sectionType) {
         return;
     }
     clearTimeout(window.editorContentSaveTimeout);
     window.editorContentSaveTimeout = undefined;
-    if (editorCommManager.nodeModified) {
+    if (editorCommManager.isNodeModified) {
         editorCommManager.saveEditorContent();
     }
     const nodeEditorBtn = document.getElementById('node-editor-btn');
