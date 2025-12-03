@@ -39,26 +39,16 @@ function setupMenuInteractions() {
     
 }
 
-// 模拟菜单功能执行
-function triggerAction(actionId) {
-    const actions = {
-        'export': { name: '导出项目', icon: '📤' },
-        'import': { name: '导入项目', icon: '📥' },
-        'settings': { name: '设置', icon: '⚙️' }
-    };
-    
-    const action = actions[actionId];
-    if (action) {
-        // 可以在这里添加实际的功能代码
-        switch(actionId) {
-            case 'export':
-                exportGraph();
-            break;
-            case 'import':
-                importGraph(jsonData)
-            break;
-            case 'settings':
-            break;
-        }
+// 菜单功能执行
+function triggerAction(action) {
+    switch(action) {
+        case 'save':
+            exportGraph();
+        break;
+        case 'import':
+            importGraph()
+        break;
+        case 'settings':
+        break;
     }
 }

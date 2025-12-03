@@ -4,7 +4,7 @@ class runtimeNode {
     constructor() {
         this.serialize_widgets = true;
     }
-    onExecute() {
+    async onExecute() {
         try {
             // 1. 收集所有输入端口的数据，构建输入参数对象
             const inputs = {};
@@ -15,20 +15,39 @@ class runtimeNode {
                     inputs[inputName] = this.getInputData(i);
                 }
             }
-            
-            // 2. 将输入对象作为参数传递给用户函数
-            const userFunction = new Function('inputs', `
-                try {
-                    ${this.properties.fn}
-                } catch(err) {
-                    console.error("用户函数执行错误:", err);
-                    return { error: err.message };
+            let result;
+            try {
+                switch (this.properties.codeType) {
+                    case "javascript":
+                        // 将输入对象作为参数传递给用户函数
+                        const userFunction = new Function('inputs', `${this.properties.fn}`);
+                        result = userFunction(inputs);
+                    break;
+                    case "python":
+                        result = await python_exec(this.properties.fn, inputs);
+                    break;
+                    case "sh":
+                        // shell command
+                        result = await executeTerminalCommand(this.properties.fn, inputs);
+                    break;
+                    case "rust":
+                        result = await rust_exec(this.properties.fn, inputs);
+                    break;
+                    default:
+                        console.log('unknown type');
+                    break;
                 }
-            `);
-            
-            // 3. 执行用户函数，传入输入对象
-            const result = userFunction(inputs);
+            } catch(err) {
+                result = {
+                    error: true,
+                    labelMarkedForOutputs: 'rawResult',
+                    detail: err
+                }
+            }
+            // debug
+            // console.log(result);
 
+            // test todo
             if (result === undefined || result === null) {
                 // 如果没有返回值，清空所有输出
                 for (let i = 0; i < this.outputs.length; i++) {
@@ -38,78 +57,56 @@ class runtimeNode {
             }
             
             // 情况1：返回值是对象（按输出端口名称映射）
-            if (typeof result === 'object' && !Array.isArray(result)) {
-                for (let i = 0; i < this.outputs.length; i++) {
-                    const outputName = this.outputs[i].name;
-                    if (result.hasOwnProperty(`output_${i}`)) {
-                        // perior output_0, output_1
-                        this.setOutputData(i, result[`output_${i}`]);
-                    } else if (outputName && result.hasOwnProperty(outputName)) {
-                        // then name
-                        this.setOutputData(i, result[outputName]);
-                    } else {
-                        this.setOutputData(i, undefined);
-                    }
+            if (typeof result === 'object' && result.hasOwnProperty('labelMarkedForOutputs')) {
+                switch (result.labelMarkedForOutputs) {
+                    case 'rawResult':
+                        // object made for error check
+                        if (result.error = true) {
+                            for (let i = 0; i < this.outputs.length; i++) {
+                                this.setOutputData(i, undefined);
+                            }
+                            console.error("Node"+this.id+"run ERROR: ", result.detail);
+                        } else if (result.result) {
+                            for (let i = 0; i < this.outputs.length; i++) {
+                                this.setOutputData(i, result.result);
+                            }
+                        }
+                    break;
+                    case 'outputs':
+                        // object made for outputs
+                        for (let i = 0; i < this.outputs.length; i++) {
+                            const outputName = this.outputs[i].name;
+                            if (result.hasOwnProperty(`output_${i}`)) {
+                                // perior output_0, output_1
+                                this.setOutputData(i, result[`output_${i}`]);
+                            } else if (outputName && result.hasOwnProperty(outputName)) {
+                                // then name
+                                this.setOutputData(i, result[outputName]);
+                            } else {
+                                this.setOutputData(i, undefined);
+                            }
+                        }
+                    default:
+                    break;
                 }
                 return;
             }
             
-            // 情况2：返回值是数组（按顺序映射到输出端口）
-            if (Array.isArray(result)) {
-                for (let i = 0; i < Math.min(result.length, this.outputs.length); i++) {
-                    this.setOutputData(i, result[i]);
-                }
-                return;
-            }
+            // // 情况2：返回值是数组（按顺序映射到输出端口）
+            // if (Array.isArray(result)) {
+            //     for (let i = 0; i < Math.min(result.length, this.outputs.length); i++) {
+            //         this.setOutputData(i, result[i]);
+            //     }
+            //     return;
+            // }
             
-            // 情况3：单个值（设置到第一个输出端口）
-            this.setOutputData(0, result);
+            // 情况3：单个值
+            for (let i = 0; i < this.outputs.length; i++) {
+                this.setOutputData(i, result);
+            }
             
         } catch(err) {
             console.error(this.id+"号节点执行错误:", err);
-        }
-    }
-    onSelected() {
-        console.log("当前选中节点id:", this.id);
-
-        const event = new CustomEvent('nodeSelected', {
-            detail: this
-        });
-        document.dispatchEvent(event);
-    }
-}
-
-class shellNode {
-    constructor() {
-        this.serialize_widgets = true;
-        this.properties = {
-            fn: "",
-            codeType: window.shell,
-        };
-        this.addWidget("text", "command", this.properties.fn, () => {
-            // what i should write??
-        });
-    }
-    async onExecute() {
-        if (this.inputs) {
-            for (let i = 0; i < this.inputs.length; i++) {
-                try {
-                    let result = await executeTerminalCommand(this.getInputData(i));
-                    
-                    for (let i = 0; i < this.outputs.length; i++) {
-                        this.setOutputData(i, result);
-                    }
-                } catch(err) {
-                    console.error(this.id+"号节点执行错误:", err);
-                }
-            }
-        }
-        if (this.properties.fn) {
-            let result = await executeTerminalCommand(this.properties.fn);
-            
-            for (let i = 0; i < this.outputs.length; i++) {
-                this.setOutputData(i, result);
-            }   
         }
     }
     onSelected() {

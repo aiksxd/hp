@@ -1,28 +1,66 @@
-// 导出图数据为JSON字符串
-function exportGraph() {
-    const graphData = window.graph.serialize();
-    
-    // 转换为格式化JSON
-    return JSON.stringify(graphData, null, 2);
+const { open, save } = window.__TAURI__.dialog;
+const { readFile, writeFile } = window.__TAURI__.fs;
+let targetPath, sourcePath, rememberedFileName = undefined;
+// 导出图数据
+async function exportGraph() {
+    let graphData = window.graph.serialize();
+    const encoder = new TextEncoder();
+    graphData = JSON.stringify(graphData, null, 2);
+    graphData = encoder.encode(graphData);
+
+    if (!targetPath) {
+        targetPath = await save({
+            title: 'save as',
+            filters: [{
+                name: 'file',
+                extensions: ['json']
+            }],
+            defaultPath: `${rememberedFileName}`
+        });
+    }
+    if (!targetPath) {
+        return;
+    }
+    rememberedFileName = targetPath.split(/[\\/]/).pop()
+    try {
+        await writeFile(targetPath, graphData);
+        showHint('save successfully\n'+targetPath);
+    } catch (error) {
+        console.error('Save failed:', error);
+        showHint('!!!SAVE FAILED!!!');
+        throw new Error(`Save failed: ${error.message}`);
+    }
 }
 
 // 从JSON字符串导入图数据
-function importGraph(jsonData) {
-    if (!jsonData || typeof jsonData !== 'string') {
-        throw new Error('需要有效的JSON字符串');
-    }
-    
+async function importGraph() {
     try {
-        // 解析JSON数据
-        const graphData = JSON.parse(jsonData);
-        
+        sourcePath = await open({
+            multiple: false,
+            directory: false,
+            title: 'open',
+            filters: [{
+                name: rememberedFileName || 'file',
+                extensions: ['json']
+            }]
+        });
+
+        if (!sourcePath) {
+            return;
+        }
+        targetPath = sourcePath;
+        rememberedFileName = sourcePath.split(/[\\/]/).pop()
+        // 因为我们设置了 multiple: false，所以这里直接使用
+        let graphData = await readFile(sourcePath);
+        const decoder = new TextDecoder();
+        graphData = decoder.decode(graphData);
+        graphData = JSON.parse(graphData);
         // 清空现有图
         window.graph.clear();
-        
-        // 核心：配置图数据
+
         window.graph.configure(graphData);
-        
-        return true;
+        showHint('Import Successfully');
+
     } catch (error) {
         console.error('导入失败:', error);
         throw new Error(`导入失败: ${error.message}`);

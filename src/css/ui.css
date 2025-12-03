@@ -7,7 +7,6 @@
     left: 10%;
     right: 10%;
     transition: 0.2s;
-    overflow: hidden;
     border: 2px solid #333;
     border-bottom: none; /* 移除底部边框 */
     border-radius: 12px 12px 0 0; /* 只设置左上和右上圆角 */
@@ -78,8 +77,8 @@
 
 .hint {
     position: fixed;
-    top: 160px;
-    right: 120px;
+    top: 30px;
+    left: 30px;
     background: rgba(30, 30, 80, 0.9);
     color: #aaccff;
     padding: 10px 15px;
@@ -88,8 +87,7 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     font-size: 14px;
     z-index: 1001;
-    max-width: 200px;
-    animation: fadeInOut 5s forwards;
+    animation: fadeInOut 3s forwards;
 }
 
 @keyframes fadeInOut {

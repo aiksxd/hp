@@ -1,8 +1,8 @@
 use tauri;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn rust_exec(code: &str) -> String {
+    format!("Hello, {}! You've been greeted from Rust!", code)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -13,9 +13,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_python::init_and_register(vec![
-            "greet_python"
+            "python_exec"
         ]))
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![rust_exec])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

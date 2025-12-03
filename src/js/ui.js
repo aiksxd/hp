@@ -24,11 +24,9 @@ function showHint(text) {
     document.body.appendChild(hint);
     
     setTimeout(() => {
-        document.body.className.remove('hint');
-        setTimeout(() => {
-            document.body.removeChild(hint);
-        }, 1000);
-    }, 2000);
+        hint.classList.remove('hint');
+        hint.remove();
+    }, 3000);
         
 }
 function switchSection(sectionType) {

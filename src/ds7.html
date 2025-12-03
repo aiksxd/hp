@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas + Markdown + 代码高亮示例</title>
+    <!-- 1. 引入 highlight.js 的样式和核心库 -->
+    <link rel="stylesheet"
+          href="css/github-dark.min.css">
+    <script src="js/highlight.min.js"></script>
+    <!-- 2. 引入 marked.js 库 -->
+    <script src="js/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+
+        #editor-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* 用于绘制纯文本、光标、背景的Canvas */
+        #text-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: #1e1e1e;
+        }
+
+        /* 用于承载高亮后HTML的透明容器 */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            pointer-events: none; /* 允许点击事件穿透到Canvas */
+            color: transparent; /* 文字本身透明，只显示高亮背景 */
+            padding: 10px;
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* 控制高亮代码块的样式 */
+        #overlay code {
+            pointer-events: auto;
+            border-radius: 3px;
+            padding: 0.2em 0.4em;
+            font-size: 85%;
+        }
+        #overlay pre {
+            margin: 1em 0;
+            padding: 0.8em;
+            background-color: #161616;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor-container">
+        <canvas id="text-canvas"></canvas>
+        <div id="overlay"></div>
+    </div>
+
+    <script>
+        // 获取Canvas和Overlay元素
+        const canvas = document.getElementById('text-canvas');
+        const overlay = document.getElementById('overlay');
+        const ctx = canvas.getContext('2d');
+
+        // 设置Canvas尺寸与容器一致
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            overlay.style.width = canvas.width + 'px';
+            overlay.style.height = canvas.height + 'px';
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 编辑器初始内容：包含Markdown和代码
+        let editorContent = `# Canvas Markdown 编辑器
+
+这是一个**混合渲染**的示例。
+下面是一段 JavaScript 代码：
+
+\`\`\`javascript
+// 使用 highlight.js 高亮代码
+function greet(name) {
+    console.log(\`Hello, \${name}!\`);
+    return \`<span class="hljs-keyword">return</span> something\`;
+}
+\`\`\`
+
+下面是一段 Python 代码：
+
+\`\`\`python
+def fibonacci(n):
+    """计算斐波那契数列"""
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+\`\`\`
+
+行内代码示例：调用 \`console.log()\` 函数。
+`;
+
+        // 基础绘制函数（简化版）
+        function drawTextToCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#d4d4d4';
+            ctx.font = '16px Consolas';
+            ctx.textBaseline = 'top';
+
+            const lines = editorContent.split('\n');
+            const lineHeight = 24;
+            const padding = 10;
+
+            lines.forEach((line, index) => {
+                // 这里只做简单绘制，实际编辑器需要处理换行、滚动、光标等
+                ctx.fillText(line, padding, padding + index * lineHeight);
+            });
+        }
+
+        // 核心：将内容渲染到HTML叠加层
+        function renderToOverlay() {
+            // 1. 使用 marked 将 Markdown 转换为 HTML
+            const rawHtml = marked.parse(editorContent, {
+                breaks: true,
+                gfm: true
+            });
+
+            // 2. 将HTML字符串设置到叠加层
+            overlay.innerHTML = rawHtml;
+
+            // 3. 对叠加层中的所有 <pre><code> 块应用 highlight.js
+            overlay.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block); // 这是 highlight.js 的API[citation:2]
+            });
+        }
+
+        // 初始渲染
+        drawTextToCanvas();
+        renderToOverlay();
+
+        // 简单的键盘输入处理（仅为演示）
+        canvas.addEventListener('click', () => canvas.focus());
+        canvas.tabIndex = 0; // 让Canvas可接收键盘焦点
+        canvas.addEventListener('keydown', (e) => {
+            if (e.key.length === 1) { // 输入字符
+                editorContent += e.key;
+            } else if (e.key === 'Backspace') {
+                editorContent = editorContent.slice(0, -1);
+            } else if (e.key === 'Enter') {
+                editorContent += '\n';
+            }
+            // 更新视图
+            drawTextToCanvas();
+            renderToOverlay();
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>

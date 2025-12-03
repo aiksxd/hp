@@ -45,7 +45,7 @@ require(['vs/editor/editor.main'], function () {
             }, 1000); // 1秒防抖
         };
         editor.onDidChangeModelContent(function(e){
-            console.log(e)
+            // console.log(e)
             if (editorCommManager.currentNodeId === null) {
                 return;
             }
@@ -123,30 +123,21 @@ class EditorCommunicationManager {
         // 格式化显示数据
         switch (window.editContentType) {
             case 'node':
+                nodeData.inputs = nodeData.inputs || [];
+                nodeData.outputs = nodeData.outputs || [];
                 data = {
                     title: nodeData.title,
                     inputs: nodeData.inputs,
                     outputs: nodeData.outputs,
                 };
+                data = jsonToSimple(data);
                 contentType = 'yaml';
             break;
             case 'code':
                 if (nodeData.properties.fn) {
                     data = nodeData.properties.fn;
                 } else {
-                    let inputsCode = '';
-                    let outputsCode = '';
-                    if (nodeData.inputs) {
-                        inputsCode = nodeData.inputs.map((input, i) => `let ${input.name} = inputs.input_${i};`).join('\n');
-                    }
-                    if (nodeData.outputs) {
-                        outputsCode = nodeData.outputs.map(output => `${output.name}: ""`).join(', ');
-                    }
-                    data = [
-                        `${inputsCode}`,
-                        `// write your code here`,
-                        `return {${outputsCode}}`
-                    ].join('\n');
+                    data = this.welcomeContent(nodeData)
                 }
                 contentType = nodeData.properties.codeType;
             break;
@@ -172,7 +163,57 @@ class EditorCommunicationManager {
             this.isUpdating = false;
         }, 100);
     }
-
+    
+    welcomeContent(nodeData){
+        let inputsCode = '';
+        let outputsCode = '';
+        let data;
+        switch (nodeData.properties.codeType) {
+            case 'javascript':
+                if (nodeData.inputs) {
+                    inputsCode = 'let '+nodeData.inputs.map((input, i) => `${input.name} = inputs.input_${i}`).join(', ') + '\n';
+                    // inputsCode = nodeData.inputs.map((input, i) => `let ${input.name} = inputs.input_${i};`).join('\n');
+                }
+                if (nodeData.outputs) {
+                    if (nodeData.outputs.length > 1) {
+                        outputsCode = nodeData.outputs.map(output => `    ${output.name}: ""`).join(',\n');
+                        outputsCode = `{\n    labelMarkedForOutputs: 'outputs',\n${outputsCode}\n}`
+                    }
+                }
+                data = [
+                    `${inputsCode}`,
+                    `// write your code here`,``,
+                    `return ${outputsCode}`
+                ].join('\n');
+            break;
+            case 'python':
+                if (nodeData.inputs) {
+                    inputsCode = nodeData.inputs.map(input => `${input.name}`).join(', ');
+                    inputsCode += ' = '+nodeData.inputs.map((input, i) => `inputs['input_${i}']`).join(', ');
+                }
+                if (nodeData.outputs) {
+                    if (nodeData.outputs.length > 1) {
+                        outputsCode = nodeData.outputs.map(output => `    "${output.name}": ""`).join(',\n');
+                        outputsCode = `{\n    labelMarkedForOutputs: 'outputs',\n${outputsCode}\n}`
+                    }
+                }
+                data = [
+                    `${inputsCode}`,
+                    `# write your code here`,``,
+                    `return ${outputsCode}`
+                ].join('\n');
+            break;
+            case 'sh':
+                data = 'echo hello';
+            break;
+            case 'rust':
+            break;
+        
+            default:
+            break;
+        }
+        return data;
+    }
     // ----------------------- Editor Write -----------------
     saveEditorContent() {
         if (this.isUpdating) return;
